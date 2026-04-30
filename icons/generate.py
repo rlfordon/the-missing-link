@@ -21,20 +21,16 @@ def draw_icon(size_px: int) -> Image.Image:
     img = Image.new("RGBA", (s, s), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
 
-    # Rounded-square paper background.
-    corner = int(0.10 * s)
-    d.rounded_rectangle((0, 0, s - 1, s - 1), radius=corner, fill=PAPER, outline=RULE, width=max(1, int(0.012 * s)))
-
     # Bracket geometry (in normalized 0..1, then scaled).
-    # Left bracket: vertical stroke at x=0.23, top serif extends right,
-    # bottom serif extends right. Right bracket mirrored.
-    stroke = int(0.045 * s)            # vertical stroke thickness
-    serif_len = int(0.11 * s)          # how far the top/bottom serif extends inward
-    serif_thick = int(0.045 * s)       # serif thickness
-    bracket_top = int(0.26 * s)
-    bracket_bot = int(0.74 * s)
-    left_x = int(0.22 * s)
-    right_x = int(0.78 * s) - stroke
+    # Brackets sit right at the canvas border so the mark reads as the
+    # dominant element, not as small content floating inside a card.
+    stroke = int(0.07 * s)             # vertical stroke thickness
+    serif_len = int(0.18 * s)          # how far the top/bottom serif extends inward
+    serif_thick = int(0.07 * s)        # serif thickness
+    bracket_top = int(0.05 * s)
+    bracket_bot = int(0.95 * s)
+    left_x = int(0.04 * s)
+    right_x = int(0.96 * s) - stroke
 
     # Left bracket
     d.rectangle((left_x, bracket_top, left_x + stroke, bracket_bot), fill=INK)
@@ -46,12 +42,13 @@ def draw_icon(size_px: int) -> Image.Image:
     d.rectangle((right_x - serif_len, bracket_top, right_x + stroke, bracket_top + serif_thick), fill=INK)
     d.rectangle((right_x - serif_len, bracket_bot - serif_thick, right_x + stroke, bracket_bot), fill=INK)
 
-    # Ellipsis: three dots, centered horizontally between brackets,
-    # sitting near the baseline (slightly below center, like real type).
-    dot_r = int(0.045 * s)
-    dot_y = int(0.62 * s)
+    # Ellipsis: three dots, centered between brackets at true vertical
+    # center (no underline below to bias it lower). Larger dots so the
+    # mark stays legible at toolbar size.
+    dot_r = int(0.07 * s)
+    dot_y = int(0.50 * s)
     cx = s // 2
-    gap = int(0.135 * s)
+    gap = int(0.20 * s)
     for offset in (-gap, 0, gap):
         x = cx + offset
         d.ellipse((x - dot_r, dot_y - dot_r, x + dot_r, dot_y + dot_r), fill=INK)
