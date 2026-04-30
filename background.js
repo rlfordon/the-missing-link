@@ -124,9 +124,17 @@ function buildCLSearchURL(info, type) {
 function buildCLSearchURL(info, type, strategy = "strict") {
   // type: "o" (opinions) or "r" (RECAP dockets)
   // strategy:
-  //   "strict"  — use everything we have: case_name + court + docket + citation
-  //   "loose"   — drop the court filter (in case Claude guessed a wrong court id)
-  //   "free"    — free-text q= only, last-ditch
+  //   "strict"             — case_name + court + docket + citation
+  //   "loose"              — drop the court filter (in case court_id is wrong)
+  //   "appellate_freetext" — opinions only: free-text q from parties +
+  //                          query_hints, plus court and date filters.
+  //                          Catches consolidated cases where the appellate
+  //                          caption differs from the article's framing
+  //                          (e.g., "Las Americas v. Paxton" → "United
+  //                          States v. State of Texas" on appeal).
+  //   "free"               — free-text q= only, last-ditch
+  // Returns null when the strategy has no useful query to build (caller
+  // skips null URLs).
   const params = new URLSearchParams();
   params.set("type", type);
   params.set("order_by", "score desc");
@@ -137,6 +145,28 @@ function buildCLSearchURL(info, type, strategy = "strict") {
       (info.query_hints && info.query_hints[0]) ||
       (info.parties || []).join(" ");
     if (q) params.set("q", q);
+    return `${CL_BASE}/api/rest/v4/search/?${params.toString()}`;
+  }
+
+  if (strategy === "appellate_freetext") {
+    const queryParts = [];
+    if (info.parties && info.parties.length > 0) queryParts.push(...info.parties.slice(0, 4));
+    if (info.query_hints && info.query_hints.length > 0) queryParts.push(...info.query_hints.slice(0, 2));
+    if (queryParts.length === 0 && info.case_name) queryParts.push(info.case_name);
+    if (queryParts.length === 0) return null;
+    params.set("q", queryParts.join(" "));
+    if (info.court_id) params.set("court", info.court_id);
+    // Date filter: prefer the explicit decision date (tight window),
+    // else fall back to the year hint (looser).
+    if (info.date_decided) {
+      const d = new Date(info.date_decided);
+      if (!isNaN(d.getTime())) {
+        d.setDate(d.getDate() - 30);
+        params.set("filed_after", d.toISOString().slice(0, 10));
+      }
+    } else if (info.date_filed_year) {
+      params.set("filed_after", `${info.date_filed_year - 1}-01-01`);
+    }
     return `${CL_BASE}/api/rest/v4/search/?${params.toString()}`;
   }
 
@@ -187,6 +217,12 @@ async function searchCourtListener(info) {
     for (const s of ["strict", "loose"]) {
       attempts.push({ type: t, strategy: s });
     }
+    // For the opinions index, try a free-text pass that uses parties +
+    // court + date — catches consolidated cases where the appellate caption
+    // differs from the article's framing.
+    if (t === "o") {
+      attempts.push({ type: "o", strategy: "appellate_freetext" });
+    }
   }
   // Final last-ditch attempt: free-text, RECAP first (broader coverage).
   attempts.push({ type: "r", strategy: "free" });
@@ -195,6 +231,8 @@ async function searchCourtListener(info) {
   const triedURLs = [];
   for (const { type, strategy } of attempts) {
     const url = buildCLSearchURL(info, type, strategy);
+    // Skip when the strategy had no useful query to build.
+    if (!url) continue;
     // Don't repeat identical URLs (can happen when court_id is null — strict
     // and loose produce the same query).
     if (triedURLs.includes(url)) continue;
