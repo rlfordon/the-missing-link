@@ -51,7 +51,7 @@ If you add a field, also update consumers in `popup.js` and `background.js`. If 
 
 ## Configuration knobs (no build, just constants)
 
-- **Model.** `CLAUDE_MODEL` in `background.js`. Currently `claude-opus-4-7`. For this task `claude-haiku-4-5-20251001` is much cheaper with negligible quality loss.
+- **Model.** `CLAUDE_MODEL` in `background.js`. Currently `claude-haiku-4-5-20251001` — cheap, fast, and good enough for structured JSON extraction. Bump to `claude-sonnet-4-6` or `claude-opus-4-7` if quality drops on tricky cases.
 - **Text caps.** `MAX = 20000` (page) and `SEL_MAX = 4000` (selection) in `content.js`.
 - **Anthropic header.** `anthropic-dangerous-direct-browser-access: true` is required for direct browser calls and must stay set.
 

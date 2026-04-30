@@ -60,7 +60,7 @@ def draw_icon(size_px: int) -> Image.Image:
 if __name__ == "__main__":
     import os
     here = os.path.dirname(os.path.abspath(__file__))
-    for sz in (48, 96):
+    for sz in (48, 96, 128):
         img = draw_icon(sz)
         out = os.path.join(here, f"icon-{sz}.png")
         img.save(out, "PNG", optimize=True)

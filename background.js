@@ -8,7 +8,7 @@
 
 const CL_BASE = "https://www.courtlistener.com";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
-const CLAUDE_MODEL = "claude-opus-4-7"; // current top model
+const CLAUDE_MODEL = "claude-haiku-4-5-20251001"; // cheap + fast; Opus/Sonnet are options for higher quality
 
 // ---- Claude: extract case identifiers ------------------------------------
 
