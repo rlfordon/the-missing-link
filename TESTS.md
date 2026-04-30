@@ -31,19 +31,26 @@ When you fix something or change the prompt, walk through this list and update t
 
 ---
 
-## Courthouse News — sanctions for AI-generated brief
+## Courthouse News — sanctions for AI-generated brief (Fivehouse v. DoD)
 
 **URL:** https://www.courthousenews.com/judge-rebukes-ex-doj-attorney-for-ai-generated-brief/
 
-**Mode:** Whole page (or focus on the sanctions paragraph if the page covers multiple cases).
-
-**What it tests:** District-court sanctions order on a recent filing — should route to RECAP, not the opinions index. Tests the `document_type` rule that pushes trial-court matters to RECAP. Previously returned a JSON error when using Haiku (now fixed by max_tokens bump in `be0c6f3`).
+**Case:** *Fivehouse v. U.S. Department of Defense*, E.D.N.C. (`court_id: "nced"`). The article describes the magistrate judge's reprimand order for the former federal prosecutor who used generative AI in his brief.
 
 **Mode tested:** Focus on `"A federal magistrate judge officially reprimanded a former federal prosecutor Tuesday for an error-filled brief he admitted to using generative artificial intelligence on."`
 
-**Expected:** TBD — the specific document is Tuesday's reprimand order. Find it on CourtListener (or confirm it isn't yet ingested) and record the URL.
+**What it tests (multiple failure modes):**
+1. District-court sanctions order — should route to RECAP, not opinions.
+2. **Originally exposed the malformed-JSON / truncation bug.** Haiku returned `"confidence":high` (no quotes) and cut off mid-field at `"docket_num`. The truncation half is fixed by max_tokens bump (`be0c6f3`); the unquoted-enum half waits on BACKLOG #3 (tool-use refactor).
+3. **Right docket, wrong document selection.** Even after the cascade lands the right docket, the popup picks the most-recent *available* document — which falls back to an older summary judgment when the recent reprimand isn't yet ingested or has `is_available: false`. Drives BACKLOG #4 (date-biased document selection + show document filing date).
 
-**Last observed (2026-04-30, Haiku):** Right case, right docket, but the popup surfaced an older summary judgment order instead of Tuesday's reprimand. Likely Tuesday's document isn't yet on CourtListener (or `is_available: false`); the extension fell back to the next-most-recent available document. Also: the popup's "filed" date showed the case-filing date rather than the displayed document's date — confusing.
+**Expected:** https://www.courtlistener.com/docket/71231282/129/fivehouse-v-us-department-of-defense/ (Tuesday's reprimand order — confirmed available in RECAP).
+
+**Last observed:**
+- Original Haiku run (before max_tokens bump): JSON parse error, popup showed "Something went wrong."
+- After `be0c6f3` (max_tokens 1500), 2026-04-30, Haiku: returns the right docket but surfaces an older summary judgment order instead of Tuesday's reprimand. Popup meta shows the case-filing date rather than the displayed document's date — confusing.
+- After BACKLOG #3 (tool-use refactor): the unquoted-enum failure mode should disappear. Verify by re-running.
+- After BACKLOG #4 (document-selection improvements): the right-docket-wrong-document failure should resolve.
 
 ---
 
@@ -79,18 +86,6 @@ When you fix something or change the prompt, walk through this list and update t
 **Expected:** TBD — find the SDNY docket and record the URL.
 
 **Last observed (2026-04-30):** ✓ Still works on the current build (post-rename, post-cascade-refactor).
-
----
-
-## Fivehouse v. U.S. Department of Defense
-
-**Article URL:** TBD — capture next time you reproduce the original failure.
-
-**What it tests:** Triggered the malformed-JSON bug — the model returned `"confidence":high` (no quotes) and cut off mid-field at `"docket_num`. Useful as a regression test for the tool-use refactor (BACKLOG #4). max_tokens bump in `be0c6f3` addresses truncation but not the unquoted-enum issue (which Haiku produces independently).
-
-**Expected:** https://www.courtlistener.com/docket/71231282/129/fivehouse-v-us-department-of-defense/ (specific docket entry — confirmed available in RECAP, so once JSON parses cleanly the cascade should surface it). Court is E.D.N.C. (`nced`).
-
-**Last observed:** When this article was tested with Haiku, the extraction call threw on malformed JSON and the cascade never ran, so the popup showed an error instead of a result. After BACKLOG #4 (tool-use refactor), this test case should resolve to the docket entry above.
 
 ---
 
