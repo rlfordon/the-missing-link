@@ -8,7 +8,7 @@
 
 const CL_BASE = "https://www.courtlistener.com";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
-const CLAUDE_MODEL = "claude-haiku-4-5-20251001"; // cheap + fast; Opus/Sonnet are options for higher quality
+const CLAUDE_MODEL = "claude-sonnet-4-6"; // mid-tier: better disambiguation than Haiku, cheaper than Opus
 
 // ---- Claude: extract case identifiers ------------------------------------
 

@@ -49,7 +49,7 @@ The popup shows a confidence chip on the top match — if it says "low," trust t
 - **Firefox only.** MV2 works in Firefox but not Chrome (which is MV3-only).
 - **Single case per click.** If a page discusses multiple cases and you don't select one, you'll get whichever case Claude weighted highest. Use focus mode for the rest.
 - **Won't find what isn't on CourtListener.** State trial-court filings and very recent matters may not be in RECAP yet.
-- **Costs Anthropic API tokens.** Fractions of a cent per click at the default Haiku rate; pennies if you switch to Opus.
+- **Costs Anthropic API tokens.** A fraction of a cent to a few cents per click, depending on the model.
 
 ## Development
 
