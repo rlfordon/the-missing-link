@@ -185,11 +185,30 @@ async function run() {
     return;
   }
 
+  // Pick up a pending selection deposited by the right-click context menu
+  // (background.js writes this when the user picks "Find on CourtListener"
+  // on a text selection — including selections inside Firefox's PDF
+  // viewer, which content scripts can't reach).
+  //
+  // Check this BEFORE the CL-PDF URL shortcut: an explicit selection on a
+  // CL PDF (e.g. user highlights a citation in the document) must win over
+  // the "you're on a CL PDF, jump to the docket" URL heuristic.
+  const stored = await browser.storage.local.get("pendingSelection");
+  if (stored.pendingSelection) {
+    await browser.storage.local.remove("pendingSelection");
+  }
+  const pending =
+    stored.pendingSelection && Date.now() - stored.pendingSelection.ts < 30000
+      ? stored.pendingSelection
+      : null;
+
   // Shortcut: a CourtListener RECAP PDF URL encodes the PACER court code
   // and PACER case ID — NOT CourtListener's internal docket pk. We have to
   // resolve the PACER case ID to a CL docket pk via the Search API.
   // Pattern: storage.courtlistener.com/recap/gov.uscourts.<court>.<pacer_case_id>/...
-  const recapPdfMatch = (tab.url || "").match(
+  // Skip when we have a pending selection — the user wants the highlighted
+  // citation, not the docket they're viewing.
+  const recapPdfMatch = !pending && (tab.url || "").match(
     /^https?:\/\/storage\.courtlistener\.com\/recap\/gov\.uscourts\.([^/.]+)\.(\d+)\//
   );
   if (recapPdfMatch) {
@@ -223,19 +242,6 @@ async function run() {
     );
     return;
   }
-
-  // Pick up a pending selection deposited by the right-click context menu
-  // (background.js writes this when the user picks "Find on CourtListener"
-  // on a text selection — including selections inside Firefox's PDF
-  // viewer, which content scripts can't reach).
-  const stored = await browser.storage.local.get("pendingSelection");
-  if (stored.pendingSelection) {
-    await browser.storage.local.remove("pendingSelection");
-  }
-  const pending =
-    stored.pendingSelection && Date.now() - stored.pendingSelection.ts < 30000
-      ? stored.pendingSelection
-      : null;
 
   // Check for API key.
   const { apiKey } = await browser.storage.local.get("apiKey");
