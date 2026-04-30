@@ -1,8 +1,10 @@
 {
   "manifest_version": 2,
   "name": "The Missing Link",
-  "version": "0.2.0",
-  "description": "Find the opinion or docket on CourtListener for the current page. Uses Claude to identify the case, then searches CourtListener.",
+  "version": "0.3.0",
+  "description": "Find the case the article didn't link. Claude identifies the case discussed on the page; the extension links you straight to it on CourtListener.",
+  "author": "Rebecca Fordon",
+  "homepage_url": "https://github.com/rlfordon/the-missing-link",
   "icons": {
     "48": "icons/icon-48.png",
     "96": "icons/icon-96.png"
@@ -38,7 +40,7 @@
   ],
   "browser_specific_settings": {
     "gecko": {
-      "id": "missing-link@example.local",
+      "id": "the-missing-link@rlfordon.github.io",
       "strict_min_version": "109.0"
     }
   }

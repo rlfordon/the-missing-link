@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+
+- Renamed from CourtListener Finder to The Missing Link.
+- New icon: bracketed-ellipsis `[…]` mark, matching the legal-citation aesthetic of the popup.
+- Manifest cleanup for AMO submission: stable gecko id, `homepage_url`, `author`, sharper description.
+
 ## 0.2.0
 
 - Added focus mode: select a passage on the page before clicking, and Claude resolves *that* case specifically while still using the rest of the page for context.
