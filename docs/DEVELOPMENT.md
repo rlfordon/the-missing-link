@@ -49,4 +49,4 @@ Replace `browser.` with `chrome.` (or use a polyfill), convert `manifest.json` t
 
 ## Editing in Claude Code
 
-If you're using Claude Code in this repo, see [`CLAUDE.md`](CLAUDE.md) for architectural notes and gotchas — including the duplicate `buildCLSearchURL` definition in `background.js` that's easy to edit by mistake.
+If you're using Claude Code in this repo, see [`CLAUDE.md`](../CLAUDE.md) for architectural notes and gotchas — including the duplicate `buildCLSearchURL` definition in `background.js` that's easy to edit by mistake.

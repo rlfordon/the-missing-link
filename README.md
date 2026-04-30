@@ -72,7 +72,7 @@ Most useful things to flag (Issues tab on the repo, or message me directly):
 
 ## Development
 
-See [DEVELOPMENT.md](DEVELOPMENT.md) for architecture, configuration knobs, and source layout.
+See [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) for architecture, configuration knobs, and source layout. Other dev notes (`docs/BACKLOG.md`, `docs/TESTS.md`) live alongside it.
 
 ## License
 
