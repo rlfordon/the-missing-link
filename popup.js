@@ -147,11 +147,33 @@ function renderResult(info, search) {
     ${snippetHTML}
     <a class="primary-link" href="${esc(primaryURL || "#")}" target="_blank" rel="noopener">${esc(primaryLabel)}</a>
     <div class="secondary-links">
+      ${primaryURL ? `<a href="#" class="copy-link" data-url="${esc(primaryURL)}">copy link</a>` : ""}
       ${docketURL && docketURL !== primaryURL ? `<a href="${esc(docketURL)}" target="_blank" rel="noopener">View full docket →</a>` : ""}
       ${search.query_url ? `<a href="${esc(search.query_url.replace("/api/rest/v4/search/", "/?"))}" target="_blank" rel="noopener">See all search results →</a>` : ""}
     </div>
     ${altHTML}
   `;
+
+  // Wire up the copy-link affordance. Browser popups close on focus loss,
+  // so we keep the click in-popup (preventDefault) and use the Clipboard
+  // API to put the URL on the system clipboard, then flash a confirmation.
+  const copyEl = box.querySelector(".copy-link");
+  if (copyEl) {
+    copyEl.addEventListener("click", async (e) => {
+      e.preventDefault();
+      try {
+        await navigator.clipboard.writeText(copyEl.dataset.url);
+        copyEl.textContent = "copied ✓";
+        copyEl.classList.add("copied");
+      } catch {
+        copyEl.textContent = "couldn't copy";
+      }
+      setTimeout(() => {
+        copyEl.textContent = "copy link";
+        copyEl.classList.remove("copied");
+      }, 1500);
+    });
+  }
 }
 
 async function run() {

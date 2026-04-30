@@ -204,6 +204,12 @@ header {
   align-self: flex-start;
 }
 .secondary-links a:hover { color: var(--oxblood); border-bottom-style: solid; }
+.secondary-links a.copy-link { cursor: pointer; }
+.secondary-links a.copy-link.copied {
+  color: var(--forest);
+  border-bottom-color: var(--forest);
+  border-bottom-style: solid;
+}
 
 .alt-list {
   margin-top: 14px;
