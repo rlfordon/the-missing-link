@@ -89,6 +89,20 @@ When you fix something or change the prompt, walk through this list and update t
 
 ---
 
+## Washington Post — non-case article (Surgeon General nominee)
+
+**URL:** https://www.washingtonpost.com/health/2026/04/30/surgeon-general-nominee-means-saphier/
+
+**Mode:** Whole page.
+
+**What it tests:** Non-case article. Verifies the "no case detected" empty state — the extension shouldn't try to invent a case when the page isn't about litigation.
+
+**Expected:** Empty state ("No case detected").
+
+**Last observed (2026-04-30):** ✓ Correctly returned "no case detected."
+
+---
+
 ## 1027 Superhits — multi-case article, focus on Casey
 
 **URL:** https://1027superhits.com/2025/12/06/us-supreme-court-may-be-poised-to-ditch-more-of-its-precedents/
