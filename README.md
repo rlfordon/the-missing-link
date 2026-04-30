@@ -10,18 +10,22 @@ When the page discusses multiple cases, select the passage about the case you wa
 
 ## Install
 
-*AMO listing coming soon.* For now, install from source:
+*AMO listing coming soon.* For now, install from a release:
 
-1. Clone the repo:
+1. Download the latest **Source code (zip)** from the [releases page](https://github.com/rlfordon/the-missing-link/releases/latest).
+2. Unzip it somewhere on your computer.
+3. In Firefox, open `about:debugging#/runtime/this-firefox`.
+4. Click **Load Temporary Add-on…** and select `manifest.json` from the unzipped folder.
 
-   ```sh
-   git clone https://github.com/rlfordon/the-missing-link.git
-   ```
+The extension stays loaded until Firefox restarts — reload it from `about:debugging` after each Firefox restart.
 
-2. In Firefox, open `about:debugging#/runtime/this-firefox`.
-3. Click **Load Temporary Add-on…** and select `manifest.json` from the cloned directory.
+### Or clone the source
 
-The extension stays loaded until Firefox restarts.
+If you'd rather work from the latest `main` (e.g., for development or to pick up fixes between releases), clone the repo and load `manifest.json` from there the same way:
+
+```sh
+git clone https://github.com/rlfordon/the-missing-link.git
+```
 
 ## Setup
 
