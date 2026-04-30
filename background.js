@@ -74,7 +74,7 @@ ${text}`;
     },
     body: JSON.stringify({
       model,
-      max_tokens: 800,
+      max_tokens: 1500,
       system: EXTRACT_SYSTEM,
       messages: [{ role: "user", content: userContent }],
     }),
