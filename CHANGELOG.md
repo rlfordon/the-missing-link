@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0
+
+- **Model picker** in settings — choose between Haiku 4.5 (fast/cheap), Sonnet 4.6 (balanced, default), and Opus 4.7 (best quality).
+- **Copy-link button** in the popup — grab the result URL without right-clicking, since right-click closes the popup.
+- **Better case identification on consolidated and appellate cases.** When an article frames a case under one party's name but the appellate court captioned it differently (e.g., article says "Las Americas v. Paxton" but the 5th Cir. opinion is "United States v. State of Texas"), the search cascade now runs a free-text pass against the opinions index using parties + court + date and catches the right opinion.
+- **Fewer extraction failures** — bumped Claude's response token budget so the JSON output doesn't truncate mid-field on case-heavy articles.
+- 128 px icon shipped alongside 48/96 for AMO listing.
+- README split: user-facing in `README.md`, developer/architecture notes in `DEVELOPMENT.md`.
+
 ## 0.3.0
 
 - Renamed from CourtListener Finder to The Missing Link.
