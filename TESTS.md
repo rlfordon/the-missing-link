@@ -89,6 +89,22 @@ When you fix something or change the prompt, walk through this list and update t
 
 ---
 
+## The Conversation — focus on un-named older case (Shelby County v. Holder)
+
+**URL:** https://theconversation.com/supreme-court-ruling-the-latest-in-history-of-diminishing-minority-voting-rights-281815
+
+**Mode:** Focus on `"Back in 2013, the Supreme Court tossed out a key provision of the Voting Rights Act regarding federal oversight of elections."`
+
+**What it tests:** Focus mode where the focus passage *describes* a case without *naming* it. The article's main subject is the recent *Louisiana v. Callais* ruling; the focus passage is about *Shelby County v. Holder* (570 U.S. 529, 2013) — the SCOTUS case that gutted VRA Section 5. Tests whether the model uses world knowledge to identify a case from descriptive context (year + court + subject) when the passage gives no caption.
+
+**Expected:** *Shelby County v. Holder* (the un-named 2013 case). CourtListener URL TBD — record next time.
+
+**Last observed (2026-04-30, Haiku):** ✗ Returned *Louisiana v. Callais* (the page's main subject), ignoring the focus passage entirely. The model defaulted to the dominant page case rather than inferring Shelby County from "2013 + SCOTUS + VRA + federal oversight."
+
+**Failure pattern:** Different from the Tangier failure. Tangier was *hallucination* — the model confidently invented a wrong case name. This is *focus override* — the model received an explicit focus instruction but reverted to the page's main subject when the focus passage didn't contain a literal case name to extract. Suggests the prompt's "focus overrides the page's main case" rule isn't strong enough for cases-described-not-named. Possible fix: add to `EXTRACT_SYSTEM` an instruction like "If the focus passage describes a case but doesn't name it, use your training-data knowledge to identify the case from context (year + court + subject matter); do not fall back to the page's main case."
+
+---
+
 ## Columbus Dispatch — Ohio Supreme Court (Disciplinary Counsel v. Rudduck)
 
 **URL:** https://www.dispatch.com/story/news/politics/2026/04/14/ohio-supreme-court-says-rule-blocking-endorsements-is-unconstitutional/89603915007/
