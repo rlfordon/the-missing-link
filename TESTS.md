@@ -89,6 +89,20 @@ When you fix something or change the prompt, walk through this list and update t
 
 ---
 
+## Columbus Dispatch — Ohio Supreme Court (Disciplinary Counsel v. Rudduck)
+
+**URL:** https://www.dispatch.com/story/news/politics/2026/04/14/ohio-supreme-court-says-rule-blocking-endorsements-is-unconstitutional/89603915007/
+
+**Mode:** Whole page.
+
+**What it tests:** State supreme court ruling — verifies the `document_type: "opinion"` rule extends beyond federal appellate courts. Also tests resilience to **paywalled content**: most of the article was behind a paywall, but the visible portion gave Claude enough to identify the case.
+
+**Expected:** https://www.courtlistener.com/opinion/10831814/disciplinary-counsel-v-rudduck/
+
+**Last observed (2026-04-30, Haiku):** ✓ Returned the correct Ohio Supreme Court opinion despite limited visible text.
+
+---
+
 ## Guardian — Voting Rights Act (Louisiana v. Callais)
 
 **URL:** https://www.theguardian.com/commentisfree/2026/apr/30/supreme-court-voting-rights-act-ruling
