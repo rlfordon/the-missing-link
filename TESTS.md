@@ -89,6 +89,20 @@ When you fix something or change the prompt, walk through this list and update t
 
 ---
 
+## 1027 Superhits — multi-case article, focus on Casey
+
+**URL:** https://1027superhits.com/2025/12/06/us-supreme-court-may-be-poised-to-ditch-more-of-its-precedents/
+
+**Mode:** Focus on `"In a 1992 abortion rights case called Casey v. Planned Parenthood, the Supreme Court listed five factors to be considered when deciding whether to overrule a prior decision, such as whether the precedent is easy to apply and whether people have structured their lives based on it."`
+
+**What it tests:** Focus mode on a long article that discusses multiple SCOTUS cases. The selected passage names the case (*Casey v. Planned Parenthood*) but with the parties reversed from the official caption (*Planned Parenthood v. Casey*). Tests both focus-mode handling and resilience to reversed-party-order framing.
+
+**Expected:** https://www.courtlistener.com/opinion/117828/planned-parenthood-of-southeastern-pennsylvania-v-casey-no-a-655/
+
+**Last observed (2026-04-30, Haiku):** ✓ Correctly returned the Casey opinion despite reversed party order in the focus text.
+
+---
+
 ## Constitution Center blog — Ten Commandments / 5th Circuit
 
 **URL:** https://constitutioncenter.org/blog/supreme-court-showdown-over-ten-commandments-likely-after-federal-court-decision
