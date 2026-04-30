@@ -206,8 +206,10 @@ async function run() {
       if (res.ok) {
         const data = await res.json();
         const r = data.results && data.results[0];
-        if (r && r.docket_id) {
-          await browser.tabs.update(tab.id, { url: `${CL_BASE}/docket/${r.docket_id}/` });
+        // CL requires the slug in the URL — bare /docket/<id>/ 404s. Use
+        // docket_absolute_url, which already has the slug baked in.
+        if (r && r.docket_absolute_url) {
+          await browser.tabs.update(tab.id, { url: CL_BASE + r.docket_absolute_url });
           window.close();
           return;
         }
