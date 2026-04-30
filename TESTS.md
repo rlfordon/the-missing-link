@@ -78,7 +78,7 @@ When you fix something or change the prompt, walk through this list and update t
 
 **Expected:** TBD — find the SDNY docket and record the URL.
 
-**Last observed:** Worked correctly in early dev (before rename / icon / cascade refactors). Re-verify against current build.
+**Last observed (2026-04-30):** ✓ Still works on the current build (post-rename, post-cascade-refactor).
 
 ---
 
