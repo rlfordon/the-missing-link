@@ -8,7 +8,7 @@
 
 const CL_BASE = "https://www.courtlistener.com";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
-const CLAUDE_MODEL = "claude-sonnet-4-6"; // mid-tier: better disambiguation than Haiku, cheaper than Opus
+const DEFAULT_MODEL = "claude-sonnet-4-6"; // fallback when user hasn't picked a model in settings
 
 // ---- Claude: extract case identifiers ------------------------------------
 
@@ -43,7 +43,7 @@ FOCUS PASSAGE: If the user message contains a "FOCUS PASSAGE" section in additio
 
 Output ONLY the JSON object.`;
 
-async function extractCaseInfo({ apiKey, title, url, text, selection }) {
+async function extractCaseInfo({ apiKey, model, title, url, text, selection }) {
   // If the user selected text, it becomes the focus passage. The rest of
   // the page still goes in as context — Claude uses it for disambiguation
   // (docket numbers, court ids, exact captions the selection might lack),
@@ -73,7 +73,7 @@ ${text}`;
       "anthropic-dangerous-direct-browser-access": "true",
     },
     body: JSON.stringify({
-      model: CLAUDE_MODEL,
+      model,
       max_tokens: 800,
       system: EXTRACT_SYSTEM,
       messages: [{ role: "user", content: userContent }],
@@ -218,12 +218,13 @@ async function searchCourtListener(info) {
 browser.runtime.onMessage.addListener(async (msg) => {
   if (msg && msg.type === "FIND_CASE") {
     try {
-      const { apiKey } = await browser.storage.local.get("apiKey");
+      const { apiKey, model } = await browser.storage.local.get(["apiKey", "model"]);
       if (!apiKey) {
         return { ok: false, error: "no_api_key" };
       }
       const info = await extractCaseInfo({
         apiKey,
+        model: model || DEFAULT_MODEL,
         title: msg.title,
         url: msg.url,
         text: msg.text,

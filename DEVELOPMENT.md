@@ -22,7 +22,7 @@
 
 A few things worth knowing if you want to tweak:
 
-- **Model.** `CLAUDE_MODEL` in `background.js` defaults to `claude-sonnet-4-6` — mid-tier, good disambiguation at moderate cost. Drop to `claude-haiku-4-5-20251001` for ~10x cheaper, or bump to `claude-opus-4-7` for the best quality on tricky pages.
+- **Model.** Users pick Haiku 4.5 / Sonnet 4.6 / Opus 4.7 in the options page; the choice is stored in `browser.storage.local` under key `model` and read by `background.js` on each request. To change the *default* (what new users get before they touch settings), edit `DEFAULT_MODEL` in `background.js`.
 - **Text caps.** `MAX = 20000` chars for the page, `SEL_MAX = 4000` for the selection, both in `content.js`. Raise for very long articles.
 - **Search strategy.** The cascade in `background.js` (`searchCourtListener`) tries RECAP-first or opinions-first based on Claude's `document_type` hint, then falls back through `strict → loose → free` query variants. The `strict` variant uses the `court` filter; `loose` drops it (in case the model guessed the court ID wrong); `free` falls back to free-text `q=`.
 - **Prompt.** `EXTRACT_SYSTEM` in `background.js`. The most consequential lines are the rules for `document_type` (which routes search between CL's two indexes) and the focus-passage instructions (which tell Claude to resolve a user-selected passage rather than the page's most prominent case).

@@ -51,7 +51,7 @@ If you add a field, also update consumers in `popup.js` and `background.js`. If 
 
 ## Configuration knobs (no build, just constants)
 
-- **Model.** `CLAUDE_MODEL` in `background.js`. Currently `claude-sonnet-4-6`. Drop to `claude-haiku-4-5-20251001` for ~10x cheaper at small quality cost; bump to `claude-opus-4-7` for the best disambiguation on tricky pages.
+- **Model.** Users pick from radios in the options page (Haiku 4.5 / Sonnet 4.6 / Opus 4.7). Stored in `browser.storage.local` under key `model`, read by `background.js` on each request and passed into `extractCaseInfo`. `DEFAULT_MODEL` in `background.js` is the fallback when nothing is set (currently `claude-sonnet-4-6`).
 - **Text caps.** `MAX = 20000` (page) and `SEL_MAX = 4000` (selection) in `content.js`.
 - **Anthropic header.** `anthropic-dangerous-direct-browser-access: true` is required for direct browser calls and must stay set.
 

@@ -1,9 +1,20 @@
+const DEFAULT_MODEL = "claude-sonnet-4-6";
+
 const $ = (id) => document.getElementById(id);
 
 async function load() {
-  const { apiKey } = await browser.storage.local.get("apiKey");
+  const { apiKey, model } = await browser.storage.local.get(["apiKey", "model"]);
   if (apiKey) $("apiKey").value = apiKey;
+  const selected = model || DEFAULT_MODEL;
+  const radio = document.querySelector(`input[name="model"][value="${selected}"]`);
+  if (radio) radio.checked = true;
 }
+
+document.querySelectorAll('input[name="model"]').forEach((radio) => {
+  radio.addEventListener("change", async () => {
+    if (radio.checked) await browser.storage.local.set({ model: radio.value });
+  });
+});
 
 $("toggleShow").addEventListener("click", () => {
   const el = $("apiKey");
