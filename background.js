@@ -251,6 +251,51 @@ async function searchCourtListener(info) {
   return { type: null, strategy: null, results: [], query_url: null, tried: triedURLs.length };
 }
 
+// ---- Context menu: "Find on CourtListener" on selected text --------------
+//
+// Why: Firefox's built-in PDF viewer doesn't expose selections to content
+// scripts (the viewer renders in a chrome-privileged document), so the
+// toolbar button can't see what the user highlighted in a PDF. But the
+// contextMenus API DOES surface `info.selectionText` from the PDF viewer,
+// so a right-click menu is the one path that works inside PDFs without
+// bundling pdf.js. Stash the selection in storage and pop the popup;
+// popup.js picks it up and runs the same Claude → CourtListener flow on
+// just the selection (no GRAB_PAGE).
+
+const MENU_ID = "find-on-courtlistener";
+
+browser.runtime.onInstalled.addListener(() => {
+  // removeAll first so reinstall/upgrade can't produce duplicates.
+  browser.contextMenus.removeAll().then(() => {
+    browser.contextMenus.create({
+      id: MENU_ID,
+      title: "Find on CourtListener",
+      contexts: ["selection"],
+    });
+  });
+});
+
+browser.contextMenus.onClicked.addListener(async (info, tab) => {
+  if (info.menuItemId !== MENU_ID) return;
+  if (!info.selectionText) return;
+  await browser.storage.local.set({
+    pendingSelection: {
+      selection: info.selectionText,
+      sourceURL: (tab && tab.url) || info.pageUrl || "",
+      sourceTitle: (tab && tab.title) || "",
+      ts: Date.now(),
+    },
+  });
+  try {
+    await browser.browserAction.openPopup();
+  } catch (e) {
+    // openPopup can fail in rare cases (e.g., focus stolen by another
+    // window). The pendingSelection is still in storage — if the user
+    // clicks the toolbar button within 30s, the popup will pick it up.
+    console.warn("openPopup failed; user can click the toolbar icon:", e);
+  }
+});
+
 // ---- Message handler ------------------------------------------------------
 
 browser.runtime.onMessage.addListener(async (msg) => {

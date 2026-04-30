@@ -179,7 +179,40 @@ function renderResult(info, search) {
 async function run() {
   $("settings").addEventListener("click", () => browser.runtime.openOptionsPage());
 
-  // Check for API key first.
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  if (!tab || !tab.id) {
+    showError("No active tab", "Couldn't find a page to read.");
+    return;
+  }
+
+  // Shortcut: a CourtListener RECAP PDF URL already encodes the docket ID.
+  // Pattern: storage.courtlistener.com/recap/gov.uscourts.<court>.<docket_id>/...
+  // Jump straight to the docket without invoking Claude.
+  const recapPdfMatch = (tab.url || "").match(
+    /^https?:\/\/storage\.courtlistener\.com\/recap\/gov\.uscourts\.[^/.]+\.(\d+)\//
+  );
+  if (recapPdfMatch) {
+    const docketId = recapPdfMatch[1];
+    setStatus("Opening docket…", `CourtListener docket #${docketId}`);
+    await browser.tabs.update(tab.id, { url: `${CL_BASE}/docket/${docketId}/` });
+    window.close();
+    return;
+  }
+
+  // Pick up a pending selection deposited by the right-click context menu
+  // (background.js writes this when the user picks "Find on CourtListener"
+  // on a text selection — including selections inside Firefox's PDF
+  // viewer, which content scripts can't reach).
+  const stored = await browser.storage.local.get("pendingSelection");
+  if (stored.pendingSelection) {
+    await browser.storage.local.remove("pendingSelection");
+  }
+  const pending =
+    stored.pendingSelection && Date.now() - stored.pendingSelection.ts < 30000
+      ? stored.pendingSelection
+      : null;
+
+  // Check for API key.
   const { apiKey } = await browser.storage.local.get("apiKey");
   if (!apiKey) {
     showError(
@@ -190,9 +223,29 @@ async function run() {
     return;
   }
 
-  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-  if (!tab || !tab.id) {
-    showError("No active tab", "Couldn't find a page to read.");
+  // Context-menu path: skip GRAB_PAGE and run the flow on just the
+  // selection. The selection is the entire input here — there's no
+  // surrounding page text we can reliably read (PDFs especially).
+  if (pending) {
+    const preview =
+      pending.selection.length > 60
+        ? pending.selection.slice(0, 60) + "…"
+        : pending.selection;
+    setStatus("Identifying the case…", `Selection: "${preview}"`);
+    let response;
+    try {
+      response = await browser.runtime.sendMessage({
+        type: "FIND_CASE",
+        url: pending.sourceURL || tab.url || "",
+        title: pending.sourceTitle || tab.title || "",
+        text: pending.selection,
+        selection: "",
+      });
+    } catch (e) {
+      showError("Extension error", `<code>${esc(e.message || e)}</code>`);
+      return;
+    }
+    handleFindCaseResponse(response, { fromSelection: true });
     return;
   }
 
@@ -251,11 +304,14 @@ async function run() {
     return;
   }
 
+  handleFindCaseResponse(response);
+}
+
+function handleFindCaseResponse(response, { fromSelection } = {}) {
   if (!response) {
     showError("No response", "Background script didn't respond.");
     return;
   }
-
   if (!response.ok) {
     if (response.error === "no_api_key") {
       showError("Setup needed", "Add your Anthropic API key in settings.", true);
@@ -264,11 +320,12 @@ async function run() {
     showError("Something went wrong", `<code>${esc(response.error)}</code>`);
     return;
   }
-
+  // Context-menu path: the selection IS the input, so flag it for the
+  // "focused on your selection" badge.
+  if (fromSelection && response.info) {
+    response.info._used_selection = true;
+  }
   setStatus("Searching CourtListener…", "Looking for the matching case");
-
-  // We already have the full response; the status line above was just
-  // cosmetic. Render immediately.
   renderResult(response.info, response.search);
 }
 

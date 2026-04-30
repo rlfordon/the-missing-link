@@ -13,6 +13,7 @@
   "permissions": [
     "activeTab",
     "storage",
+    "contextMenus",
     "https://api.anthropic.com/*",
     "https://www.courtlistener.com/*"
   ],
