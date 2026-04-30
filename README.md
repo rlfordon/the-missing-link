@@ -76,4 +76,4 @@ See [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) for architecture, configuration
 
 ## License
 
-[MIT](LICENSE). Personal-scale tool.
+[MIT](LICENSE) © 2026 Rebecca Fordon. Personal-scale tool.
