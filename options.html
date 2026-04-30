@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>The Missing Link — Settings</title>
+  <link rel="stylesheet" href="popup.css" />
+  <style>
+    body { width: 440px; min-height: 0; }
+    .pad { padding: 20px; }
+    label { display: block; font-family: var(--serif); font-weight: 600; margin-bottom: 6px; font-size: 14px; }
+    input[type=password], input[type=text] {
+      width: 100%;
+      padding: 8px 10px;
+      font-family: var(--mono);
+      font-size: 12px;
+      border: 1px solid var(--rule);
+      background: #fff;
+      color: var(--ink);
+      border-radius: 3px;
+    }
+    input:focus { outline: none; border-color: var(--accent); }
+    .help { font-size: 12px; color: var(--ink-soft); margin-top: 8px; line-height: 1.5; }
+    .help a { color: var(--accent); }
+    .row { margin-bottom: 18px; }
+    .save-row { display: flex; gap: 10px; align-items: center; }
+    button.save {
+      padding: 8px 16px;
+      background: var(--ink);
+      color: var(--paper);
+      border: none;
+      border-radius: 3px;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    button.save:hover { background: var(--accent); }
+    .saved { color: var(--forest); font-size: 12px; font-family: var(--mono); }
+    .show-toggle {
+      background: none;
+      border: 1px solid var(--rule);
+      color: var(--ink-soft);
+      padding: 4px 8px;
+      font-size: 11px;
+      font-family: var(--mono);
+      border-radius: 3px;
+      cursor: pointer;
+      margin-left: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div class="sig">
+        <span class="mono">ML</span>
+        <span class="sep">·</span>
+        <span class="label">Settings</span>
+      </div>
+    </header>
+    <main class="pad">
+      <div class="row">
+        <label for="apiKey">Anthropic API Key</label>
+        <div style="display:flex; align-items:center;">
+          <input type="password" id="apiKey" placeholder="sk-ant-…" autocomplete="off" />
+          <button type="button" class="show-toggle" id="toggleShow">show</button>
+        </div>
+        <p class="help">
+          Create a key at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.
+          The key is stored locally in your browser and sent only to <code>api.anthropic.com</code>
+          when you click the extension button.
+        </p>
+      </div>
+
+      <div class="save-row">
+        <button class="save" id="save">Save</button>
+        <span class="saved" id="saved"></span>
+      </div>
+    </main>
+  </div>
+  <script src="options.js"></script>
+</body>
+</html>

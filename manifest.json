@@ -1,0 +1,45 @@
+{
+  "manifest_version": 2,
+  "name": "The Missing Link",
+  "version": "0.2.0",
+  "description": "Find the opinion or docket on CourtListener for the current page. Uses Claude to identify the case, then searches CourtListener.",
+  "icons": {
+    "48": "icons/icon-48.png",
+    "96": "icons/icon-96.png"
+  },
+  "permissions": [
+    "activeTab",
+    "storage",
+    "https://api.anthropic.com/*",
+    "https://www.courtlistener.com/*"
+  ],
+  "browser_action": {
+    "default_title": "Find on CourtListener",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "48": "icons/icon-48.png",
+      "96": "icons/icon-96.png"
+    }
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false
+  },
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": false
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "missing-link@example.local",
+      "strict_min_version": "109.0"
+    }
+  }
+}

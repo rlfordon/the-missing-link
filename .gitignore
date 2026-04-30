@@ -1,0 +1,27 @@
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node (in case anyone adds tooling later)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Built / packaged extension
+*.zip
+*.xpi
+dist/
+build/
+
+# Anything that looks like a key, just in case
+.env
+.env.*
+secrets.*
+*.key

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>The Missing Link</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div class="sig">
+        <span class="mono">ML</span>
+        <span class="sep">·</span>
+        <span class="label">Missing Link</span>
+      </div>
+      <button id="settings" title="Settings" aria-label="Settings">⚙</button>
+    </header>
+
+    <main id="main">
+      <section id="status" class="pad">
+        <div class="headline" id="headline">Reading page…</div>
+        <div class="sub" id="sub">Extracting case identifiers</div>
+        <div class="bar"><div class="bar-fill" id="bar"></div></div>
+      </section>
+
+      <section id="result" class="pad hidden">
+        <!-- filled in by popup.js -->
+      </section>
+
+      <section id="error" class="pad hidden">
+        <!-- filled in by popup.js -->
+      </section>
+    </main>
+
+    <footer>
+      <span class="mono small">powered by claude · courtlistener</span>
+    </footer>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
