@@ -27,7 +27,7 @@ When you fix something or change the prompt, walk through this list and update t
 
 **Last observed:**
 - Before BACKLOG #1: returned the W.D. Tex. district court docket (`/docket/69197122/`) — wrong.
-- After BACKLOG #1 (commit `749d704`): TBD — re-test.
+- After BACKLOG #1 (commit `749d704`), 2026-04-30, Haiku: returned the correct en banc opinion at `/opinion/10847941/united-states-v-state-of-texas/`. ✓
 
 ---
 
@@ -37,11 +37,13 @@ When you fix something or change the prompt, walk through this list and update t
 
 **Mode:** Whole page (or focus on the sanctions paragraph if the page covers multiple cases).
 
-**What it tests:** District-court sanctions order on a recent filing — should route to RECAP, not the opinions index. Tests the `document_type` rule that pushes trial-court matters to RECAP.
+**What it tests:** District-court sanctions order on a recent filing — should route to RECAP, not the opinions index. Tests the `document_type` rule that pushes trial-court matters to RECAP. Previously returned a JSON error when using Haiku (now fixed by max_tokens bump in `be0c6f3`).
 
-**Expected:** TBD — verify by reading the article and searching CourtListener for the sanctioned case.
+**Mode tested:** Focus on `"A federal magistrate judge officially reprimanded a former federal prosecutor Tuesday for an error-filled brief he admitted to using generative artificial intelligence on."`
 
-**Last observed:** Not yet recorded.
+**Expected:** TBD — the specific document is Tuesday's reprimand order. Find it on CourtListener (or confirm it isn't yet ingested) and record the URL.
+
+**Last observed (2026-04-30, Haiku):** Right case, right docket, but the popup surfaced an older summary judgment order instead of Tuesday's reprimand. Likely Tuesday's document isn't yet on CourtListener (or `is_available: false`); the extension fell back to the next-most-recent available document. Also: the popup's "filed" date showed the case-filing date rather than the displayed document's date — confusing.
 
 ---
 
@@ -73,11 +75,15 @@ When you fix something or change the prompt, walk through this list and update t
 
 ---
 
-## Fivehouse v. U.S. Department of Defense (no URL yet)
+## Fivehouse v. U.S. Department of Defense
 
-**What it tests:** Triggered the malformed-JSON / truncation bug — the model returned `"confidence":high` (no quotes) and cut off mid-field at `"docket_num`. Useful as a regression test for the tool-use refactor (BACKLOG #4).
+**Article URL:** TBD — capture next time you reproduce the original failure.
 
-**Expected:** Capture the URL and add it here next time you reproduce the issue. The article is presumably about an E.D.N.C. case captioned `Fivehouse v. U.S. Department of Defense` (court_id `nced`).
+**What it tests:** Triggered the malformed-JSON bug — the model returned `"confidence":high` (no quotes) and cut off mid-field at `"docket_num`. Useful as a regression test for the tool-use refactor (BACKLOG #4). max_tokens bump in `be0c6f3` addresses truncation but not the unquoted-enum issue (which Haiku produces independently).
+
+**Expected:** https://www.courtlistener.com/docket/71231282/129/fivehouse-v-us-department-of-defense/ (specific docket entry — confirmed available in RECAP, so once JSON parses cleanly the cascade should surface it). Court is E.D.N.C. (`nced`).
+
+**Last observed:** When this article was tested with Haiku, the extraction call threw on malformed JSON and the cascade never ran, so the popup showed an error instead of a result. After BACKLOG #4 (tool-use refactor), this test case should resolve to the docket entry above.
 
 ---
 
