@@ -185,17 +185,40 @@ async function run() {
     return;
   }
 
-  // Shortcut: a CourtListener RECAP PDF URL already encodes the docket ID.
-  // Pattern: storage.courtlistener.com/recap/gov.uscourts.<court>.<docket_id>/...
-  // Jump straight to the docket without invoking Claude.
+  // Shortcut: a CourtListener RECAP PDF URL encodes the PACER court code
+  // and PACER case ID — NOT CourtListener's internal docket pk. We have to
+  // resolve the PACER case ID to a CL docket pk via the Search API.
+  // Pattern: storage.courtlistener.com/recap/gov.uscourts.<court>.<pacer_case_id>/...
   const recapPdfMatch = (tab.url || "").match(
-    /^https?:\/\/storage\.courtlistener\.com\/recap\/gov\.uscourts\.[^/.]+\.(\d+)\//
+    /^https?:\/\/storage\.courtlistener\.com\/recap\/gov\.uscourts\.([^/.]+)\.(\d+)\//
   );
   if (recapPdfMatch) {
-    const docketId = recapPdfMatch[1];
-    setStatus("Opening docket…", `CourtListener docket #${docketId}`);
-    await browser.tabs.update(tab.id, { url: `${CL_BASE}/docket/${docketId}/` });
-    window.close();
+    const [, court, pacerCaseId] = recapPdfMatch;
+    setStatus("Opening docket…", `${court} #${pacerCaseId}`);
+    // Search API supports anonymous reads; the dockets endpoint requires auth.
+    // q=pacer_case_id:<id> + court filter resolves the PACER ID to CL's pk.
+    const apiURL =
+      `${CL_BASE}/api/rest/v4/search/?type=r` +
+      `&court=${encodeURIComponent(court)}` +
+      `&q=${encodeURIComponent("pacer_case_id:" + pacerCaseId)}`;
+    try {
+      const res = await fetch(apiURL, { headers: { accept: "application/json" } });
+      if (res.ok) {
+        const data = await res.json();
+        const r = data.results && data.results[0];
+        if (r && r.docket_id) {
+          await browser.tabs.update(tab.id, { url: `${CL_BASE}/docket/${r.docket_id}/` });
+          window.close();
+          return;
+        }
+      }
+    } catch (e) {
+      // Fall through to error UI below.
+    }
+    showError(
+      "Couldn't find the docket",
+      `CourtListener returned no docket for <code>${esc(court)}</code> case <code>${esc(pacerCaseId)}</code>. The PDF may not be indexed in the search system.`
+    );
     return;
   }
 
