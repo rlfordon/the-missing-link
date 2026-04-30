@@ -89,6 +89,20 @@ When you fix something or change the prompt, walk through this list and update t
 
 ---
 
+## Constitution Center blog — Ten Commandments / 5th Circuit
+
+**URL:** https://constitutioncenter.org/blog/supreme-court-showdown-over-ten-commandments-likely-after-federal-court-decision
+
+**Mode:** Whole page.
+
+**What it tests:** Article discusses several cases in passing but is mainly about a recent 5th Circuit decision on Ten Commandments displays. Tests handling of an article that mentions multiple cases without focus mode.
+
+**Expected:** TBD — verify the case caption. The article is about a 5th Circuit decision on Ten Commandments, likely *Roake v. Brumley* or similar Louisiana case. The result *Nathan v. Alamo Heights ISD* surfaced by Haiku looks plausibly related but the name doesn't obviously match the article topic — worth confirming.
+
+**Last observed (2026-04-30, Haiku):** Returned https://www.courtlistener.com/opinion/10846394/nathan-v-alamo-heights-isd/. User flagged this as "probably the right call" but with some uncertainty. Good candidate for the post-cascade validation in BACKLOG #5: if "Nathan" and "Alamo Heights" don't appear in the article, the confidence chip should reflect that.
+
+---
+
 ## The Conversation — focus on un-named older case (Shelby County v. Holder)
 
 **URL:** https://theconversation.com/supreme-court-ruling-the-latest-in-history-of-diminishing-minority-voting-rights-281815
