@@ -53,11 +53,18 @@ When you fix something or change the prompt, walk through this list and update t
 
 **Mode:** Whole page.
 
-**What it tests:** Recently filed district-court matter (E.D. Va. likely). Tests RECAP routing for fresh dockets that don't yet have published opinions. Also tests handling when the article doesn't give a docket number.
+**What it tests:** Recently filed district-court matter with **thin case-identifying info** in the article (no docket number, no formal caption — just "former police applicant sues officials"). Exposes how each model handles low-signal articles where extraction has to lean on inference.
 
-**Expected:** TBD — find the docket on CourtListener and record the URL.
+**Expected:** https://www.courtlistener.com/docket/72126973/hayes-v-town-of-tangier-virginia/ (E.D. Va. docket; the article describes the complaint).
 
-**Last observed:** Not yet recorded.
+**Last observed (2026-04-30):**
+- **Haiku:** WRONG — confidently surfaced *AAUP v. Rubio* (completely unrelated). https://www.courtlistener.com/docket/69784731/315/10/
+- **Sonnet:** WRONG — confidently surfaced *Carroll v. Trump* (completely unrelated). https://www.courtlistener.com/docket/67373834/79/
+- **Opus:** ✓ Correct docket (*Hayes v. Town of Tangier Virginia*). Did not surface the specific complaint within the docket.
+
+**Failure pattern:** When the article is light on case identifiers, Haiku and Sonnet hallucinate case names confidently and the cascade finds *something* that matches the made-up name. Opus is significantly better at saying "I don't know exactly, but here's what the article describes" via better `query_hints` / `parties` extraction. This is a real model-capability gap on thin articles, not a prompt or cascade issue. Worse than "no match" because users see a confident wrong answer.
+
+**Follow-up test (2026-04-30):** Re-ran on Haiku and Sonnet with explicit focus passage: `"Two Tangier Island officials and the town itself received notice late last week of a lawsuit filed against them in the U.S. District Court in Norfolk for deprivation of property. It is unclear what plaintiff Joseph Hayes, of New York, who was once considered for a job as the island's police officer, is attempting to accomplish with the filing"`. Even with the plaintiff name, the court, the location, and the role spelled out, **both Haiku and Sonnet still missed the case**. Suggests this isn't only "thin article" — there's something about how smaller models construct queries from this profile (very recent, low-prominence, common surname plaintiff) that the cascade can't recover from.
 
 ---
 
