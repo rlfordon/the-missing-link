@@ -89,6 +89,37 @@ When you fix something or change the prompt, walk through this list and update t
 
 ---
 
+## Guardian — Voting Rights Act (Louisiana v. Callais)
+
+**URL:** https://www.theguardian.com/commentisfree/2026/apr/30/supreme-court-voting-rights-act-ruling
+
+**Mode:** Whole page.
+
+**What it tests:** Clean SCOTUS opinion — control case for opinions-index routing. Article is an op-ed about the ruling but mentions the case directly enough for the model to identify it.
+
+**Expected:** https://www.courtlistener.com/opinion/10850261/louisiana-v-callais/
+
+**Last observed (2026-04-30, Haiku):** ✓ Returned the correct SCOTUS opinion.
+
+---
+
+## PBS NewsHour — Voting Rights Act decision
+
+**URL:** https://www.pbs.org/newshour/show/how-the-supreme-courts-decision-weakens-the-voting-rights-act-nationwide
+
+**Mode:** Whole page.
+
+**What it tests:** Content extraction on a video-first transcript page. Different failure class than the others — fails *before* the model is called.
+
+**Last observed (2026-04-30):** Popup shows "Page is empty — No readable text was found on this page." The `content.js` pickRoot/extractText path returned <40 chars. Likely cause: PBS NewsHour articles are video-led, with transcript text either in iframes (TreeWalker can't cross frame boundaries from a top-frame content script), in shadow DOM (TreeWalker can't cross shadow roots either), or rendered after `document_idle` by JS.
+
+**Possible fixes (worth a BACKLOG entry):**
+- Walk all same-origin iframes' documents in addition to the top frame.
+- Add a fallback that retries extraction after a short delay if the first pass gets <40 chars.
+- Add `document.querySelector(".transcript")` and similar common patterns to `pickRoot`'s candidate list.
+
+---
+
 ## Categories worth filling in later
 
 As the test set grows, you'll want representatives for each of these failure modes. Some of the above already cover several; others are open slots:
