@@ -192,13 +192,11 @@ When you fix something or change the prompt, walk through this list and update t
 
 ---
 
-## Categories worth filling in later
+## Still-open categories worth filling in
 
-As the test set grows, you'll want representatives for each of these failure modes. Some of the above already cover several; others are open slots:
+These are gaps the existing 11 test cases don't cover:
 
-- **Clean SCOTUS opinion** — control case for opinions-index routing.
-- **State supreme court ruling** — verifies the `document_type: "opinion"` rule extends beyond federal appellate.
-- **Multiple cases on one page** — test that focus mode picks the right one.
-- **Paywalled article that blocks selection** — confirm the extension fails gracefully (or that the cached-selection fallback in `content.js` catches it).
-- **Non-case article** — verifies the "no case detected" empty state renders correctly.
-- **Very old case** — tests when the article describes something that's deep in CourtListener's archives, not recent.
+- **Site that hard-blocks text selection.** Tests whether `content.js`'s cached-selection fallback recovers when `window.getSelection()` returns nothing because the page actively suppresses selection (CSS `user-select: none` or JS handlers). None of the current tests specifically stress this — the paywalled Dispatch article passed without testing focus mode there.
+- **Truly old / archival case.** *Casey* (1992) is the oldest in the corpus. A pre-1990 case (e.g., *Roe* or *Brown v. Board*) would test whether the cascade behaves correctly when the article describes something deep in CourtListener's archives.
+- **Article describing a case that genuinely isn't on CourtListener** (e.g., a state trial-court matter not in RECAP). Tests the "no match" fallback flow with the manual-search links.
+- **SCOTUS oral argument coverage** rather than a decided opinion. Tests whether the cascade routes correctly when the article is about an *argued-but-undecided* case.

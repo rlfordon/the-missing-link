@@ -71,7 +71,39 @@ The system prompt shrinks because field descriptions migrate into the tool's sch
 
 **Scope:** Validation is the most targeted fix — ~20 lines, splits between `background.js` (matching parties against article text) and `popup.js` (rendering the warning). Prompt edit is a few lines but harder to reason about.
 
-## 6. "Open in tab" affordance for the popup
+## 6. Strengthen focus-passage handling for description-without-naming
+
+**Problem:** When the focus passage describes a case without literally naming it, the model ignores the focus and falls back to the page's main subject. Current prompt's "focus overrides page" rule isn't strong enough for "case described, not named" scenarios.
+
+**Test case (The Conversation / Shelby County):** Focus passage was `"Back in 2013, the Supreme Court tossed out a key provision of the Voting Rights Act regarding federal oversight of elections."` — describes *Shelby County v. Holder* by year + court + subject + outcome but doesn't name it. Haiku ignored the focus and returned *Louisiana v. Callais* (the page's main subject).
+
+**Pattern observed across testing:** Haiku is good at *lookup* (when the article names the case, it finds it — even with reversed parties as in Casey). Haiku is bad at *inference* (when the article describes the case, it can't bridge to the actual identity). Stronger prompt language plus possibly a one-shot example pair could close this gap on smaller models.
+
+**Fix:** Add to `EXTRACT_SYSTEM` something like: "If the focus passage describes a specific case but doesn't name it, use your training-data knowledge to identify the case from the descriptive context (year + court + subject + outcome). Do NOT default to the page's main case — the user's selection is the highest-priority signal." Optionally add a worked example showing description → case identification.
+
+**Scope:** Prompt edit, ~10-20 lines. Test against The Conversation article.
+
+## 7. Content extraction for video-led / iframe / JS-rendered pages
+
+**Problem:** `content.js`'s `pickRoot` + `extractText` returns <40 chars on pages where the article body is:
+- Inside an iframe (TreeWalker can't cross frame boundaries from a top-frame content script)
+- Inside shadow DOM (TreeWalker can't cross shadow roots)
+- Rendered after `document_idle` by JS (transcript loads later, not at injection time)
+- In a container the current selectors don't recognize
+
+Popup shows "Page is empty — No readable text was found on this page" instead of attempting case identification. The model never gets called.
+
+**Test case (PBS NewsHour):** https://www.pbs.org/newshour/show/how-the-supreme-courts-decision-weakens-the-voting-rights-act-nationwide. Video-led page; transcript text isn't surfaced by current extraction logic.
+
+**Possible fixes (not exclusive):**
+- Walk all same-origin iframes' documents in addition to the top frame.
+- Retry extraction after a short delay (~500ms) if the first pass returns <40 chars — handles JS-rendered content that loads after `document_idle`.
+- Add common transcript/article-body selectors (`.transcript`, `.article-body`, `[itemprop="articleBody"]`) to `pickRoot`'s candidate list.
+- As a last resort, fall back to `document.body.innerText` instead of TreeWalker (less precise but catches more).
+
+**Scope:** ~20-30 lines in `content.js`. Can be done incrementally — start with the retry-after-delay fix since it's the cheapest and likely covers most JS-render cases.
+
+## 8. "Open in tab" affordance for the popup
 
 **Problem:** Browser popups auto-close on focus loss — a hard convention we can't override. The copy-link button (already shipped) handles "I want the URL"; this would handle "I want to keep the result visible while I work."
 
