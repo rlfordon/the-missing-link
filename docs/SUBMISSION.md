@@ -53,6 +53,14 @@ cleanly.)
   only visible text and the selection; it sends nothing anywhere (all network
   calls happen in the background script, to the two hosts above).
 
+**On the `innerHTML` validator warnings:** The popup renders its UI via template
+literals assigned to `innerHTML`. Every dynamic value — page-derived text, model
+output, and CourtListener API fields — is HTML-entity-escaped through the `esc()`
+helper (`popup.js:11`) before interpolation (see `formatCaption` and every
+`${esc(...)}` call site). The only un-escaped interpolations are short
+developer-authored static fragments (`<code>`, `<br>`). No unsanitized external
+data reaches `innerHTML`.
+
 ## Internal pre-submission checklist
 - [ ] Source uses no minifier/bundler/transpiler → answer "No" to the
       "do you use build tools?" question (skips the source-upload requirement).
