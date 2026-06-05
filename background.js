@@ -19,7 +19,7 @@ Given the page text, output a SINGLE JSON object (no prose, no code fences) with
 {
   "is_case": boolean,          // true if the page discusses a specific, identifiable court case
   "confidence": "high" | "medium" | "low",
-  "case_name": string | null,  // Short CourtListener-style caption: "Loomer v. Maher", NOT "Loomer v. Maher and HBO". Use the two lead parties. If only one side is named, that's fine ("United States v. Smith"). Your best guess is better than null.
+  "case_name": string | null,  // Short CourtListener-style caption: "Loomer v. Maher", NOT "Loomer v. Maher and HBO". Use the two lead parties. If only one side is named, that's fine ("United States v. Smith"). When a government sues a government (U.S. v. a state, state v. U.S., one state v. another), use the entity name, NOT an individual official — "United States v. State of New Jersey", not "United States v. Sherrill" even if Governor Sherrill is a named co-defendant. Your best guess is better than null.
   "parties": string[] | null,  // all named parties: ["Laura Loomer", "Bill Maher", "HBO"]
   "court": string | null,      // human form: "M.D. Fla.", "S.D.N.Y.", "9th Cir.", "SCOTUS"
   "court_id": string | null,   // CourtListener court id, ONLY if you're confident. Leave null if unsure — a wrong court_id produces zero results. Examples: "flmd" (M.D. Fla.), "nysd" (S.D.N.Y.), "cacd" (C.D. Cal.), "ca9" (9th Cir.), "scotus" (SCOTUS).
@@ -194,6 +194,31 @@ async function fetchCLSearch(url) {
   }
 }
 
+function rerankByDate(results, year) {
+  // Why: CourtListener's BM25 ranks by text relevance, so an old docket with
+  // a similar caption and lots of activity can outrank the newly-filed case
+  // an article is actually about. Re-rank by year proximity to the article's
+  // hint, breaking ties with original BM25 order. Cases at or after the
+  // article's year are preferred (suits get coverage near filing); older
+  // cases get a per-year-distance penalty. Pure re-rank, no exclusion — if
+  // the hint is wrong we degrade to the original order rather than miss.
+  if (!year || !Array.isArray(results) || results.length < 2) return results;
+  const scored = results.map((r, i) => {
+    const filedYear = r.dateFiled ? parseInt(r.dateFiled.slice(0, 4), 10) : null;
+    let distance;
+    if (filedYear === null || Number.isNaN(filedYear)) {
+      distance = Number.POSITIVE_INFINITY;
+    } else if (filedYear >= year) {
+      distance = filedYear - year;
+    } else {
+      distance = (year - filedYear) * 2 + 0.5;
+    }
+    return { r, distance, originalIndex: i };
+  });
+  scored.sort((a, b) => a.distance - b.distance || a.originalIndex - b.originalIndex);
+  return scored.map((s) => s.r);
+}
+
 async function searchCourtListener(info) {
   // Strategy: try a cascade of (type, strategy) pairs until something comes
   // back. News articles about trial-court matters live in RECAP; appellate
@@ -239,10 +264,16 @@ async function searchCourtListener(info) {
     triedURLs.push(url);
     const data = await fetchCLSearch(url);
     if (data && data.results && data.results.length > 0) {
+      // Re-rank RECAP by year proximity (skip for opinions — old opinions are
+      // routinely discussed in articles long after they come down).
+      const ranked =
+        type === "r"
+          ? rerankByDate(data.results, info.date_filed_year)
+          : data.results;
       return {
         type,
         strategy,
-        results: data.results.slice(0, 5),
+        results: ranked.slice(0, 5),
         query_url: url,
         tried: triedURLs.length,
       };
