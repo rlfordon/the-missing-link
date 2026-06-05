@@ -13,34 +13,66 @@ const DEFAULT_MODEL = "claude-sonnet-4-6"; // fallback when user hasn't picked a
 
 const EXTRACT_SYSTEM = `You identify U.S. court cases discussed in news articles, blog posts, or other web pages.
 
-Given the page text, output a SINGLE JSON object (no prose, no code fences) with these fields:
+Call the record_case_extraction tool exactly once with the identifiers you extract from the page text. Provide every field; use null where a value is genuinely unavailable.
 
-{
-  "is_case": boolean,          // true if the page discusses a specific, identifiable court case
-  "confidence": "high" | "medium" | "low",
-  "case_name": string | null,  // Short CourtListener-style caption: "Loomer v. Maher", NOT "Loomer v. Maher and HBO". Use the two lead parties. If only one side is named, that's fine ("United States v. Smith"). When a government sues a government (U.S. v. a state, state v. U.S., one state v. another), use the entity name, NOT an individual official — "United States v. State of New Jersey", not "United States v. Sherrill" even if Governor Sherrill is a named co-defendant. Your best guess is better than null.
-  "parties": string[] | null,  // all named parties: ["Laura Loomer", "Bill Maher", "HBO"]
-  "court": string | null,      // human form: "M.D. Fla.", "S.D.N.Y.", "9th Cir.", "SCOTUS"
-  "court_id": string | null,   // CourtListener court id, ONLY if you're confident. Leave null if unsure — a wrong court_id produces zero results. Examples: "flmd" (M.D. Fla.), "nysd" (S.D.N.Y.), "cacd" (C.D. Cal.), "ca9" (9th Cir.), "scotus" (SCOTUS).
-  "docket_number": string | null, // e.g. "5:24-cv-00625" or "23-1234"
-  "citation": string | null,   // reporter citation like "600 U.S. 123" if given
-  "date_filed_year": number | null,
-  "date_decided": string | null, // YYYY-MM-DD if the page states a ruling date
-  "judge": string | null,
-  "document_type": "opinion" | "docket" | "complaint" | "order" | "unknown",
-  //   Key signal — use this rule:
-  //   - "opinion" ONLY for appellate or supreme-court published opinions (SCOTUS, circuit courts, state supreme courts).
-  //   - "docket" / "order" / "complaint" for anything at a DISTRICT COURT or TRIAL level — including summary judgment rulings, orders, filings, and news stories about active litigation. If the judge is a district judge, it's NOT "opinion".
-  //   - "unknown" if you really can't tell.
-  //   This controls which CourtListener index is searched (RECAP vs. Opinions), so get it right.
-  "query_hints": string[]      // 2-4 short strings you'd type into a legal search box to find this case
-}
+ROUTING RULE (most consequential field): document_type controls which CourtListener index is searched (RECAP vs. Opinions), so get it right.
+  - "opinion" ONLY for appellate or supreme-court published opinions (SCOTUS, circuit courts, state supreme courts).
+  - "docket" / "order" / "complaint" for anything at a DISTRICT COURT or TRIAL level — including summary judgment rulings, orders, filings, and news stories about active litigation. If the judge is a district judge, it is NOT "opinion".
+  - "unknown" if you genuinely can't tell.
 
-If the page isn't about a specific case (e.g. a general news roundup, an opinion piece about the law in general, a marketing page), set is_case=false and leave other fields null.
+If the page isn't about a specific case (a general news roundup, an opinion piece about the law in general, a marketing page), set is_case=false and leave the other fields null.
 
-FOCUS PASSAGE: If the user message contains a "FOCUS PASSAGE" section in addition to "PAGE TEXT", the user has highlighted the specific passage they want resolved. The page may discuss multiple cases or orders; your job is to identify the ONE case the focus passage is about, not the page's most prominent case. Use the rest of the page as context to fill in details the focus passage leaves out (docket number, court, exact caption), but the case you identify must be the one the focus is describing. If the focus passage describes a different case than the page's main subject, go with the focus.
+FOCUS PASSAGE: If the user message contains a "FOCUS PASSAGE" section in addition to "PAGE TEXT", the user has highlighted the specific passage they want resolved. The page may discuss multiple cases or orders; identify the ONE case the focus passage is about, not the page's most prominent case. Use the rest of the page as context to fill in details the focus passage leaves out (docket number, court, exact caption), but the case you identify must be the one the focus is describing. If the focus passage describes a different case than the page's main subject, go with the focus.`;
 
-Output ONLY the JSON object.`;
+// Tool schema mirrors the old EXTRACT_SYSTEM JSON shape. Downstream code reads
+// these field names as load-bearing (see CLAUDE.md). Forced tool use means the
+// API returns this as a parsed object in a tool_use block — no text parsing,
+// so malformed-JSON / unquoted-enum / code-fence failures are impossible.
+const EXTRACT_TOOL = {
+  name: "record_case_extraction",
+  description: "Record the identifiers for the U.S. court case discussed on the page.",
+  input_schema: {
+    type: "object",
+    properties: {
+      is_case: { type: "boolean", description: "true if the page discusses a specific, identifiable court case" },
+      confidence: { type: "string", enum: ["high", "medium", "low"] },
+      case_name: {
+        type: ["string", "null"],
+        description: "Short CourtListener-style caption: \"Loomer v. Maher\", NOT \"Loomer v. Maher and HBO\". Use the two lead parties. If only one side is named, that's fine (\"United States v. Smith\"). When a government sues a government (U.S. v. a state, state v. U.S., one state v. another), use the entity name, NOT an individual official — \"United States v. State of New Jersey\", not \"United States v. Sherrill\" even if Governor Sherrill is a named co-defendant. Your best guess is better than null.",
+      },
+      parties: {
+        type: ["array", "null"],
+        items: { type: "string" },
+        description: "all named parties: [\"Laura Loomer\", \"Bill Maher\", \"HBO\"]",
+      },
+      court: { type: ["string", "null"], description: "human form: \"M.D. Fla.\", \"S.D.N.Y.\", \"9th Cir.\", \"SCOTUS\"" },
+      court_id: {
+        type: ["string", "null"],
+        description: "CourtListener court id, ONLY if you're confident. Leave null if unsure — a wrong court_id produces zero results. Examples: \"flmd\" (M.D. Fla.), \"nysd\" (S.D.N.Y.), \"cacd\" (C.D. Cal.), \"ca9\" (9th Cir.), \"scotus\" (SCOTUS).",
+      },
+      docket_number: { type: ["string", "null"], description: "e.g. \"5:24-cv-00625\" or \"23-1234\"" },
+      citation: { type: ["string", "null"], description: "reporter citation like \"600 U.S. 123\" if given" },
+      date_filed_year: { type: ["number", "null"] },
+      date_decided: { type: ["string", "null"], description: "YYYY-MM-DD if the page states a ruling date" },
+      judge: { type: ["string", "null"] },
+      document_type: {
+        type: "string",
+        enum: ["opinion", "docket", "complaint", "order", "unknown"],
+        description: "\"opinion\" ONLY for appellate/supreme-court published opinions. District/trial-court anything (orders, summary judgment, filings, active-litigation news) is docket/order/complaint, NOT opinion. \"unknown\" if unsure. Controls RECAP-vs-Opinions routing.",
+      },
+      query_hints: {
+        type: "array",
+        items: { type: "string" },
+        description: "2-4 short strings you'd type into a legal search box to find this case",
+      },
+    },
+    required: [
+      "is_case", "confidence", "case_name", "parties", "court", "court_id",
+      "docket_number", "citation", "date_filed_year", "date_decided", "judge",
+      "document_type", "query_hints",
+    ],
+  },
+};
 
 async function extractCaseInfo({ apiKey, model, title, url, text, selection }) {
   // If the user selected text, it becomes the focus passage. The rest of
@@ -75,6 +107,10 @@ ${text}`;
       model,
       max_tokens: 1500,
       system: EXTRACT_SYSTEM,
+      tools: [EXTRACT_TOOL],
+      // Force the model to answer via the tool. The result arrives as a parsed
+      // object in a tool_use block — we never JSON.parse model text.
+      tool_choice: { type: "tool", name: "record_case_extraction" },
       messages: [{ role: "user", content: userContent }],
     }),
   });
@@ -84,19 +120,15 @@ ${text}`;
     throw new Error(`Claude API ${res.status}: ${body.slice(0, 300)}`);
   }
   const data = await res.json();
-  const textOut = (data.content || [])
-    .filter((b) => b.type === "text")
-    .map((b) => b.text)
-    .join("")
-    .trim();
-
-  // Defensive: strip code fences if the model added any despite instructions.
-  const cleaned = textOut.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
-  try {
-    return JSON.parse(cleaned);
-  } catch (e) {
-    throw new Error(`Claude returned non-JSON: ${textOut.slice(0, 200)}`);
+  const toolUse = (data.content || []).find(
+    (b) => b.type === "tool_use" && b.name === "record_case_extraction"
+  );
+  if (!toolUse || !toolUse.input) {
+    throw new Error(
+      `Claude did not return a record_case_extraction tool call (stop_reason=${data.stop_reason})`
+    );
   }
+  return toolUse.input;
 }
 
 // ---- CourtListener: search ------------------------------------------------
