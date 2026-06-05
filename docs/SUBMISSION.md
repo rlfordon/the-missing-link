@@ -11,11 +11,12 @@ CourtListener. It cannot be exercised without an Anthropic API key.
 
 **Test credentials:** A temporary Anthropic API key is provided in the private
 reviewer field / below. Paste it into the extension's options page (toolbar icon
-→ gear, or right-click the icon → Manage Extension → Preferences), choose any
-model, and save. (We will revoke this key after review.)
+→ gear, or right-click the icon → Manage Extension → Preferences), leave the
+default model (Sonnet 4.6) selected, and save. (We will revoke this key after
+review.)
 
 **Steps to test:**
-1. Install and open the options page; paste the provided API key; pick a model; save.
+1. Install and open the options page; paste the provided API key; leave the default model (Sonnet 4.6) selected; save.
 2. Open this known-good article (it names a case in plain text):
    https://www.theguardian.com/commentisfree/2026/apr/30/supreme-court-voting-rights-act-ruling
 3. Click the toolbar icon ("Find on CourtListener").
