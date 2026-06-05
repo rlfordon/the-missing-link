@@ -49,7 +49,7 @@ When you fix something or change the prompt, walk through this list and update t
 **Last observed:**
 - Original Haiku run (before max_tokens bump): JSON parse error, popup showed "Something went wrong."
 - After `be0c6f3` (max_tokens 1500), 2026-04-30, Haiku: returns the right docket but surfaces an older summary judgment order instead of Tuesday's reprimand. Popup meta shows the case-filing date rather than the displayed document's date — confusing.
-- After BACKLOG #3 (tool-use refactor): the unquoted-enum failure mode should disappear. Verify by re-running.
+- 2026-06-05 — tool-use refactor landed (BACKLOG #3): `extractCaseInfo` now uses Anthropic forced tool use and reads the parsed `tool_use.input`, so the unquoted-enum / malformed-JSON / code-fence parse-failure class is structurally eliminated (no model-text JSON.parse remains). Live 3-model re-run (Haiku/Sonnet/Opus) on this article still PENDING manual verification.
 - After BACKLOG #4 (document-selection improvements): the right-docket-wrong-document failure should resolve.
 
 ---
