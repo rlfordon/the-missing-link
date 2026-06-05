@@ -49,7 +49,8 @@ When you fix something or change the prompt, walk through this list and update t
 **Last observed:**
 - Original Haiku run (before max_tokens bump): JSON parse error, popup showed "Something went wrong."
 - After `be0c6f3` (max_tokens 1500), 2026-04-30, Haiku: returns the right docket but surfaces an older summary judgment order instead of Tuesday's reprimand. Popup meta shows the case-filing date rather than the displayed document's date — confusing.
-- 2026-06-05 — tool-use refactor landed (BACKLOG #3): `extractCaseInfo` now uses Anthropic forced tool use and reads the parsed `tool_use.input`, so the unquoted-enum / malformed-JSON / code-fence parse-failure class is structurally eliminated (no model-text JSON.parse remains). Live 3-model re-run (Haiku/Sonnet/Opus) on this article still PENDING manual verification.
+- 2026-06-05 — tool-use refactor landed (BACKLOG #3): `extractCaseInfo` now uses Anthropic forced tool use and reads the parsed `tool_use.input`, so the unquoted-enum / malformed-JSON / code-fence parse-failure class is structurally eliminated (no model-text JSON.parse remains).
+- 2026-06-05, Sonnet 4.6 (verified): ✓ the parse-failure class is gone — no "Something went wrong." Correctly returned the *Fivehouse v. DoD* docket (https://www.courtlistener.com/docket/71231282/fivehouse-v-us-department-of-defense/). Still surfaced the docket root rather than the specific reprimand order (`/129`) — the right-docket-wrong-document gap (BACKLOG #4) is unchanged, as expected.
 - After BACKLOG #4 (document-selection improvements): the right-docket-wrong-document failure should resolve.
 
 ---
@@ -71,6 +72,8 @@ When you fix something or change the prompt, walk through this list and update t
 
 **Failure pattern:** When the article is light on case identifiers, Haiku and Sonnet hallucinate case names confidently and the cascade finds *something* that matches the made-up name. Opus is significantly better at saying "I don't know exactly, but here's what the article describes" via better `query_hints` / `parties` extraction. This is a real model-capability gap on thin articles, not a prompt or cascade issue. Worse than "no match" because users see a confident wrong answer.
 
+**Last observed (2026-06-05, Sonnet 4.6):** WRONG — surfaced *AAUP v. Rubio* (https://www.courtlistener.com/docket/69784731/american-association-of-university-professors-v-rubio/), completely unrelated. Consistent with the 2026-04-30 thin-info failure pattern below (Sonnet's wrong answer shifted from *Carroll v. Trump* to *AAUP v. Rubio*, but it's still confidently wrong). Not a regression from the tool-use refactor — a standing model-capability gap on low-signal articles.
+
 **Follow-up test (2026-04-30):** Re-ran on Haiku and Sonnet with explicit focus passage: `"Two Tangier Island officials and the town itself received notice late last week of a lawsuit filed against them in the U.S. District Court in Norfolk for deprivation of property. It is unclear what plaintiff Joseph Hayes, of New York, who was once considered for a job as the island's police officer, is attempting to accomplish with the filing"`. Even with the plaintiff name, the court, the location, and the role spelled out, **both Haiku and Sonnet still missed the case**. Suggests this isn't only "thin article" — there's something about how smaller models construct queries from this profile (very recent, low-prominence, common surname plaintiff) that the cascade can't recover from.
 
 ---
@@ -83,9 +86,10 @@ When you fix something or change the prompt, walk through this list and update t
 
 **What it tests:** The original case that motivated the extension. SDNY trial-court matter — should route to RECAP. Tests the most basic "find the obvious case" path. If this regresses, something fundamental broke.
 
-**Expected:** TBD — find the SDNY docket and record the URL.
+**Expected:** https://www.courtlistener.com/docket/69387382/loomer-v-maher/ (SDNY docket).
 
 **Last observed (2026-04-30):** ✓ Still works on the current build (post-rename, post-cascade-refactor).
+**Last observed (2026-06-05, Sonnet 4.6):** ✓ Correct — returned the SDNY *Loomer v. Maher* docket (https://www.courtlistener.com/docket/69387382/195/loomer-v-maher/). RECAP routing canary intact after the search.js extraction + tool-use refactor.
 
 ---
 
@@ -100,6 +104,7 @@ When you fix something or change the prompt, walk through this list and update t
 **Expected:** Empty state ("No case detected").
 
 **Last observed (2026-04-30):** ✓ Correctly returned "no case detected."
+**Last observed (2026-06-05, Sonnet 4.6):** ✓ Correctly returned "no case detected" (empty state).
 
 ---
 
@@ -114,6 +119,7 @@ When you fix something or change the prompt, walk through this list and update t
 **Expected:** https://www.courtlistener.com/opinion/117828/planned-parenthood-of-southeastern-pennsylvania-v-casey-no-a-655/
 
 **Last observed (2026-04-30, Haiku):** ✓ Correctly returned the Casey opinion despite reversed party order in the focus text.
+**Last observed (2026-06-05, Sonnet 4.6):** ✓ Correct — returned *Planned Parenthood v. Casey* (https://www.courtlistener.com/opinion/112786/planned-parenthood-of-southeastern-pa-v-casey/) despite the reversed party order in the focus passage.
 
 ---
 
@@ -128,6 +134,7 @@ When you fix something or change the prompt, walk through this list and update t
 **Expected:** TBD — verify the case caption. The article is about a 5th Circuit decision on Ten Commandments, likely *Roake v. Brumley* or similar Louisiana case. The result *Nathan v. Alamo Heights ISD* surfaced by Haiku looks plausibly related but the name doesn't obviously match the article topic — worth confirming.
 
 **Last observed (2026-04-30, Haiku):** Returned https://www.courtlistener.com/opinion/10846394/nathan-v-alamo-heights-isd/. User flagged this as "probably the right call" but with some uncertainty. Good candidate for the post-cascade validation in BACKLOG #5: if "Nathan" and "Alamo Heights" don't appear in the article, the confidence chip should reflect that.
+**Last observed (2026-06-05, Sonnet 4.6):** Returned the same *Nathan v. Alamo Heights ISD* (https://www.courtlistener.com/opinion/10846394/nathan-v-alamo-heights-isd/) — does not obviously match the article's Ten Commandments / 5th Cir. topic. Pre-existing multi-case-without-focus accuracy gap (not a regression); reinforces the need for the BACKLOG #5 confidence/validation pass.
 
 ---
 
@@ -139,9 +146,10 @@ When you fix something or change the prompt, walk through this list and update t
 
 **What it tests:** Focus mode where the focus passage *describes* a case without *naming* it. The article's main subject is the recent *Louisiana v. Callais* ruling; the focus passage is about *Shelby County v. Holder* (570 U.S. 529, 2013) — the SCOTUS case that gutted VRA Section 5. Tests whether the model uses world knowledge to identify a case from descriptive context (year + court + subject) when the passage gives no caption.
 
-**Expected:** *Shelby County v. Holder* (the un-named 2013 case). CourtListener URL TBD — record next time.
+**Expected:** *Shelby County v. Holder* (the un-named 2013 case): https://www.courtlistener.com/opinion/931614/shelby-county-v-holder/
 
 **Last observed (2026-04-30, Haiku):** ✗ Returned *Louisiana v. Callais* (the page's main subject), ignoring the focus passage entirely. The model defaulted to the dominant page case rather than inferring Shelby County from "2013 + SCOTUS + VRA + federal oversight."
+**Last observed (2026-06-05, Sonnet 4.6):** ✓ Correct — inferred *Shelby County v. Holder* (https://www.courtlistener.com/opinion/931614/shelby-county-v-holder/) from the descriptive focus passage with no caption present. Note this is a stronger model than the 2026-04-30 Haiku baseline, so it's a model-capability difference, not proof the prompt fix below was applied — the focus-override-on-described-not-named case still warrants the EXTRACT_SYSTEM hardening noted in the failure pattern, since Haiku is a user-selectable model.
 
 **Failure pattern:** Different from the Tangier failure. Tangier was *hallucination* — the model confidently invented a wrong case name. This is *focus override* — the model received an explicit focus instruction but reverted to the page's main subject when the focus passage didn't contain a literal case name to extract. Suggests the prompt's "focus overrides the page's main case" rule isn't strong enough for cases-described-not-named. Possible fix: add to `EXTRACT_SYSTEM` an instruction like "If the focus passage describes a case but doesn't name it, use your training-data knowledge to identify the case from context (year + court + subject matter); do not fall back to the page's main case."
 
@@ -158,6 +166,7 @@ When you fix something or change the prompt, walk through this list and update t
 **Expected:** https://www.courtlistener.com/opinion/10831814/disciplinary-counsel-v-rudduck/
 
 **Last observed (2026-04-30, Haiku):** ✓ Returned the correct Ohio Supreme Court opinion despite limited visible text.
+**Last observed (2026-06-05, Sonnet 4.6):** ⚠️ Near-miss — returned *In re Rudduck* (https://www.courtlistener.com/opinion/8518051/in-re-rudduck/), an older Rudduck disciplinary matter, rather than the 2026 *Disciplinary Counsel v. Rudduck* ruling the article is about. Right attorney, wrong (older) case. NOT a regression from the tool-use refactor — the 2026-04-30 ✓ was Haiku; this is per-model accuracy variance on a paywalled, thin-visible-text article. `rerankByDate` does not apply here (opinions index, not RECAP), so date-proximity re-ranking can't help; candidate for the BACKLOG #5 post-cascade validation.
 
 ---
 
