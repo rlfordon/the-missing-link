@@ -31,7 +31,7 @@
     "open_in_tab": false
   },
   "background": {
-    "scripts": ["background.js"],
+    "scripts": ["search.js", "background.js"],
     "persistent": false
   },
   "content_scripts": [

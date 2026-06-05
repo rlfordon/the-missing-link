@@ -6,7 +6,6 @@
 // background script, and CORS is not an issue because we declared
 // api.anthropic.com and www.courtlistener.com in host permissions.
 
-const CL_BASE = "https://www.courtlistener.com";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const DEFAULT_MODEL = "claude-sonnet-4-6"; // fallback when user hasn't picked a model in settings
 
@@ -102,88 +101,6 @@ ${text}`;
 
 // ---- CourtListener: search ------------------------------------------------
 
-function buildCLSearchURL(info, type) {
-  // type: "o" (opinions) or "r" (RECAP dockets)
-  const params = new URLSearchParams();
-  params.set("type", type);
-  params.set("order_by", "score desc");
-
-  if (info.case_name) params.set("case_name", info.case_name);
-  if (info.docket_number) params.set("docket_number", info.docket_number);
-  if (info.court_id) params.set("court", info.court_id);
-  if (info.citation && type === "o") params.set("citation", info.citation);
-
-  // Fallback q if we have nothing structured.
-  if (!info.case_name && !info.docket_number && !info.citation) {
-    const q = (info.query_hints && info.query_hints[0]) || (info.parties || []).join(" ");
-    if (q) params.set("q", q);
-  }
-  return `${CL_BASE}/api/rest/v4/search/?${params.toString()}`;
-}
-
-function buildCLSearchURL(info, type, strategy = "strict") {
-  // type: "o" (opinions) or "r" (RECAP dockets)
-  // strategy:
-  //   "strict"             — case_name + court + docket + citation
-  //   "loose"              — drop the court filter (in case court_id is wrong)
-  //   "appellate_freetext" — opinions only: free-text q from parties +
-  //                          query_hints, plus court and date filters.
-  //                          Catches consolidated cases where the appellate
-  //                          caption differs from the article's framing
-  //                          (e.g., "Las Americas v. Paxton" → "United
-  //                          States v. State of Texas" on appeal).
-  //   "free"               — free-text q= only, last-ditch
-  // Returns null when the strategy has no useful query to build (caller
-  // skips null URLs).
-  const params = new URLSearchParams();
-  params.set("type", type);
-  params.set("order_by", "score desc");
-
-  if (strategy === "free") {
-    const q =
-      info.case_name ||
-      (info.query_hints && info.query_hints[0]) ||
-      (info.parties || []).join(" ");
-    if (q) params.set("q", q);
-    return `${CL_BASE}/api/rest/v4/search/?${params.toString()}`;
-  }
-
-  if (strategy === "appellate_freetext") {
-    const queryParts = [];
-    if (info.parties && info.parties.length > 0) queryParts.push(...info.parties.slice(0, 4));
-    if (info.query_hints && info.query_hints.length > 0) queryParts.push(...info.query_hints.slice(0, 2));
-    if (queryParts.length === 0 && info.case_name) queryParts.push(info.case_name);
-    if (queryParts.length === 0) return null;
-    params.set("q", queryParts.join(" "));
-    if (info.court_id) params.set("court", info.court_id);
-    // Date filter: prefer the explicit decision date (tight window),
-    // else fall back to the year hint (looser).
-    if (info.date_decided) {
-      const d = new Date(info.date_decided);
-      if (!isNaN(d.getTime())) {
-        d.setDate(d.getDate() - 30);
-        params.set("filed_after", d.toISOString().slice(0, 10));
-      }
-    } else if (info.date_filed_year) {
-      params.set("filed_after", `${info.date_filed_year - 1}-01-01`);
-    }
-    return `${CL_BASE}/api/rest/v4/search/?${params.toString()}`;
-  }
-
-  if (info.case_name) params.set("case_name", info.case_name);
-  if (info.docket_number) params.set("docket_number", info.docket_number);
-  if (strategy === "strict" && info.court_id) params.set("court", info.court_id);
-  if (info.citation && type === "o") params.set("citation", info.citation);
-
-  // If nothing structured landed in params beyond type/order_by, fall back to q.
-  const keys = [...params.keys()];
-  if (!keys.includes("case_name") && !keys.includes("docket_number") && !keys.includes("citation")) {
-    const q = (info.query_hints && info.query_hints[0]) || (info.parties || []).join(" ");
-    if (q) params.set("q", q);
-  }
-  return `${CL_BASE}/api/rest/v4/search/?${params.toString()}`;
-}
-
 async function fetchCLSearch(url) {
   try {
     const res = await fetch(url, { headers: { accept: "application/json" } });
@@ -194,92 +111,25 @@ async function fetchCLSearch(url) {
   }
 }
 
-function rerankByDate(results, year) {
-  // Why: CourtListener's BM25 ranks by text relevance, so an old docket with
-  // a similar caption and lots of activity can outrank the newly-filed case
-  // an article is actually about. Re-rank by year proximity to the article's
-  // hint, breaking ties with original BM25 order. Cases at or after the
-  // article's year are preferred (suits get coverage near filing); older
-  // cases get a per-year-distance penalty. Pure re-rank, no exclusion — if
-  // the hint is wrong we degrade to the original order rather than miss.
-  if (!year || !Array.isArray(results) || results.length < 2) return results;
-  const scored = results.map((r, i) => {
-    const filedYear = r.dateFiled ? parseInt(r.dateFiled.slice(0, 4), 10) : null;
-    let distance;
-    if (filedYear === null || Number.isNaN(filedYear)) {
-      distance = Number.POSITIVE_INFINITY;
-    } else if (filedYear >= year) {
-      distance = filedYear - year;
-    } else {
-      distance = (year - filedYear) * 2 + 0.5;
-    }
-    return { r, distance, originalIndex: i };
-  });
-  scored.sort((a, b) => a.distance - b.distance || a.originalIndex - b.originalIndex);
-  return scored.map((s) => s.r);
-}
-
 async function searchCourtListener(info) {
-  // Strategy: try a cascade of (type, strategy) pairs until something comes
-  // back. News articles about trial-court matters live in RECAP; appellate
-  // and SCOTUS opinions live in Opinions. We don't know which this is
-  // without a confident signal, so we try both — but we let Claude's
-  // `document_type` hint nudge the order.
-  //
-  // The `strict → loose → free` axis is separate: within each type, try
-  // with the court filter first (most precise), then without (in case the
-  // court_id was guessed wrong), then fall back to free-text.
-
-  const prefersRecap =
-    info.document_type === "docket" ||
-    info.document_type === "order" ||
-    info.document_type === "complaint" ||
-    Boolean(info.docket_number);
-  const typeOrder = prefersRecap ? ["r", "o"] : ["o", "r"];
-
-  const attempts = [];
-  for (const t of typeOrder) {
-    for (const s of ["strict", "loose"]) {
-      attempts.push({ type: t, strategy: s });
-    }
-    // For the opinions index, try a free-text pass that uses parties +
-    // court + date — catches consolidated cases where the appellate caption
-    // differs from the article's framing.
-    if (t === "o") {
-      attempts.push({ type: "o", strategy: "appellate_freetext" });
-    }
-  }
-  // Final last-ditch attempt: free-text, RECAP first (broader coverage).
-  attempts.push({ type: "r", strategy: "free" });
-  attempts.push({ type: "o", strategy: "free" });
-
-  const triedURLs = [];
-  for (const { type, strategy } of attempts) {
-    const url = buildCLSearchURL(info, type, strategy);
-    // Skip when the strategy had no useful query to build.
-    if (!url) continue;
-    // Don't repeat identical URLs (can happen when court_id is null — strict
-    // and loose produce the same query).
-    if (triedURLs.includes(url)) continue;
-    triedURLs.push(url);
+  // Try the planned (type, strategy) URLs in order until one returns results.
+  // The ordering/dedup logic lives in buildSearchPlan (pure, unit-tested);
+  // this function is just the I/O loop. `tried` counts URLs actually fetched,
+  // matching the old triedURLs.length the popup renders ("across N tries").
+  const plan = buildSearchPlan(info);
+  let tried = 0;
+  for (const { type, strategy, url } of plan) {
+    tried++;
     const data = await fetchCLSearch(url);
     if (data && data.results && data.results.length > 0) {
       // Re-rank RECAP by year proximity (skip for opinions — old opinions are
       // routinely discussed in articles long after they come down).
       const ranked =
-        type === "r"
-          ? rerankByDate(data.results, info.date_filed_year)
-          : data.results;
-      return {
-        type,
-        strategy,
-        results: ranked.slice(0, 5),
-        query_url: url,
-        tried: triedURLs.length,
-      };
+        type === "r" ? rerankByDate(data.results, info.date_filed_year) : data.results;
+      return { type, strategy, results: ranked.slice(0, 5), query_url: url, tried };
     }
   }
-  return { type: null, strategy: null, results: [], query_url: null, tried: triedURLs.length };
+  return { type: null, strategy: null, results: [], query_url: null, tried };
 }
 
 // ---- Context menu: "Find on CourtListener" on selected text --------------
