@@ -1,9 +1,32 @@
 # AMO submission — reviewer notes
 
-Paste the "Notes for reviewer" section into the AMO submission form. The rest is
-internal checklist.
+The AMO reviewer-notes field has a length cap. Paste the **"Reviewer notes (as
+submitted)"** section below — it's the condensed version that actually fits. The
+longer "Notes for reviewer (long form)" beneath it is the full reference; the
+extra detail also lives in PRIVACY.md (linked on the listing) and the repo.
 
-## Notes for reviewer
+## Reviewer notes (as submitted — 2026-06-05)
+
+```
+The Missing Link identifies the U.S. court case discussed on the current web page (via the Anthropic Claude API) and links the user to it on CourtListener. It does nothing without an Anthropic API key.
+
+TEST CREDENTIALS: A temporary Anthropic key is in the private reviewer field. Open the options page (toolbar icon → gear), paste the key, keep the default model (Sonnet 4.6), and save. We will revoke this key after review.
+
+STEPS TO TEST:
+1. Paste the key in the options page; save.
+2. Open: https://www.theguardian.com/commentisfree/2026/apr/30/supreme-court-voting-rights-act-ruling
+3. Click the toolbar icon ("Find on CourtListener").
+4. The popup identifies the case and links to it on courtlistener.com.
+(Video-led or heavily JS-rendered pages may show "Page is empty" — expected. The article above reads cleanly.)
+
+DATA FLOW: Visible page text (capped at 20,000 chars) and any selection are sent ONLY to api.anthropic.com to identify the case. The returned identifiers (name, docket, court, citation) are sent ONLY to www.courtlistener.com. The API key is stored in browser.storage.local and sent ONLY to api.anthropic.com — never to CourtListener, never logged. No analytics, telemetry, or backend.
+
+PERMISSIONS: The two host permissions are the only hosts contacted. activeTab/storage/contextMenus: read the active tab on user action, store the key + model choice, and offer a right-click action (the only path that works in Firefox's PDF viewer). The <all_urls> content script extracts page text on demand and caches the latest text selection; the cache needs a selectionchange listener live BEFORE the popup opens, because Firefox's popup focus shift clears window.getSelection() on some sites. It reads only visible text/selection and sends nothing — all network calls happen in the background script, to the two hosts above.
+
+innerHTML: the popup renders via template literals; every dynamic value is HTML-escaped via the esc() helper (popup.js:11). Only static developer markup is un-escaped. No unsanitized external data reaches innerHTML.
+```
+
+## Notes for reviewer (long form)
 
 This extension identifies the U.S. court case discussed on the current web page
 (using the Anthropic Claude API) and links the user straight to it on
