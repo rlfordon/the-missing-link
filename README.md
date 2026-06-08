@@ -4,7 +4,7 @@
 
 A Firefox extension that finds the case discussed on a web page (a news article, blog post, opinion piece) and links you straight to it on [CourtListener](https://www.courtlistener.com). Click the toolbar button — Claude identifies the case and the extension searches CourtListener for the match, usually in a few seconds.
 
-> **Status: pre-AMO beta.** Looking for testers. See [Tester feedback](#tester-feedback) below for what's most useful to flag. Requires Firefox 109+.
+> **Status: submitted to AMO (v0.5.0, 2026-06-08) — awaiting review.** Looking for testers. See [Tester feedback](#tester-feedback) below for what's most useful to flag. Requires Firefox 109+.
 
 ## Install
 

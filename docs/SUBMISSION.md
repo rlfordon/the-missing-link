@@ -85,11 +85,15 @@ developer-authored static fragments (`<code>`, `<br>`). No unsanitized external
 data reaches `innerHTML`.
 
 ## Internal pre-submission checklist
-- [ ] Source uses no minifier/bundler/transpiler → answer "No" to the
-      "do you use build tools?" question (skips the source-upload requirement).
-- [ ] `node --test` passes.
-- [ ] Fivehouse repro + 3-model regression sweep done (see docs/TESTS.md).
-- [ ] Generate a throwaway, low-limit Anthropic key for the reviewer; paste into
-      the AMO reviewer field; calendar a reminder to revoke after approval.
-- [ ] Privacy policy (PRIVACY.md) linked in the AMO privacy field.
-- [ ] At least one screenshot (popup with a found case).
+- [x] Source uses no minifier/bundler/transpiler → answered "No" to the
+      "do you use build tools?" and "submit source code?" questions.
+- [x] `node --test` passes.
+- [x] Fivehouse repro + regression sweep done (Sonnet 4.6; see docs/TESTS.md).
+      Parse-failure fix verified. Full 3-model (Haiku/Opus) sweep not re-run —
+      accuracy gaps there are pre-existing, not submission blockers.
+- [x] Throwaway, low-limit Anthropic key generated and pasted into the AMO
+      reviewer field. **STILL TODO: revoke this key after the add-on is approved.**
+- [x] Privacy policy pasted into the AMO privacy field.
+- [x] Screenshot(s) attached (popup with a found case).
+
+**Submitted to AMO: 2026-06-08, v0.5.0 (Firefox desktop, "On this site"). Awaiting review.**

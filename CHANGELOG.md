@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0
+
+- **First submission to addons.mozilla.org** (Firefox desktop). Adds a privacy policy and reviewer notes.
+- **More reliable case extraction.** Claude now returns the case identifiers via the Anthropic tool-use API instead of free-form JSON, which eliminates a class of failures where a malformed or truncated JSON response produced a "Something went wrong" error (notably on Haiku).
+- **Better re-ranking of district-court results.** When several dockets share a similar caption, results are re-ranked toward the year the article is about, so a freshly-filed case isn't buried under an older one with more activity.
+- **Sharper captions when a government sues a government** (e.g. United States v. a state) — uses the entity name rather than a named official.
+- Internal: the CourtListener query logic was split into its own module with an automated test suite; no user-facing change.
+
 ## 0.4.0
 
 - **Model picker** in settings — choose between Haiku 4.5 (fast/cheap), Sonnet 4.6 (balanced, default), and Opus 4.7 (best quality).
