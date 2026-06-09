@@ -1,5 +1,5 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "The Missing Link",
   "version": "0.5.0",
   "description": "Find the case the article didn't link. Claude identifies the case discussed on the page; the extension links you straight to it on CourtListener.",
@@ -13,11 +13,13 @@
   "permissions": [
     "activeTab",
     "storage",
-    "contextMenus",
+    "contextMenus"
+  ],
+  "host_permissions": [
     "https://api.anthropic.com/*",
     "https://www.courtlistener.com/*"
   ],
-  "browser_action": {
+  "action": {
     "default_title": "Find on CourtListener",
     "default_popup": "popup.html",
     "default_icon": {
@@ -31,20 +33,20 @@
     "open_in_tab": false
   },
   "background": {
-    "scripts": ["search.js", "background.js"],
-    "persistent": false
+    "service_worker": "sw.js",
+    "scripts": ["browser-polyfill.min.js", "search.js", "background.js"]
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"],
+      "js": ["browser-polyfill.min.js", "content.js"],
       "run_at": "document_idle"
     }
   ],
   "browser_specific_settings": {
     "gecko": {
       "id": "the-missing-link@rlfordon.github.io",
-      "strict_min_version": "109.0",
+      "strict_min_version": "121.0",
       "data_collection_permissions": {
         "required": ["websiteContent"],
         "optional": []
