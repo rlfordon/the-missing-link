@@ -4,28 +4,28 @@
 
 A Firefox extension that finds the case discussed on a web page (a news article, blog post, opinion piece) and links you straight to it on [CourtListener](https://www.courtlistener.com). Click the toolbar button — Claude identifies the case and the extension searches CourtListener for the match, usually in a few seconds.
 
-> **Status: submitted to AMO (v0.5.0, 2026-06-08) — awaiting review.** Looking for testers. See [Tester feedback](#tester-feedback) below for what's most useful to flag. Requires Firefox 109+.
+> **Status: available on [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/the-missing-link/) (v0.5.0, tentatively approved 2026-06-08).** Mozilla's automated screening approved the public listing; the add-on may still be subject to later human review. Looking for testers — see [Tester feedback](#tester-feedback) below for what's most useful to flag. Requires Firefox 109+.
 
 ## Install
 
-*AMO listing coming soon.* For now:
+Install from Firefox Add-ons:
 
-1. Download **Source code (zip)** from the [latest release](https://github.com/rlfordon/the-missing-link/releases/latest).
-2. Unzip it somewhere on your computer.
-3. In Firefox, open `about:debugging#/runtime/this-firefox`.
-4. Click **Load Temporary Add-on…** and select `manifest.json` from the unzipped folder.
+<https://addons.mozilla.org/en-US/firefox/addon/the-missing-link/>
 
-The extension stays loaded until Firefox restarts — re-load it from `about:debugging` after each restart.
-
-### Or clone the source
+### Or install from source
 
 For development or to pick up fixes between releases:
 
-```sh
-git clone https://github.com/rlfordon/the-missing-link.git
-```
+1. Download **Source code (zip)** from the [latest release](https://github.com/rlfordon/the-missing-link/releases/latest), or clone the repo:
 
-Then load `manifest.json` from the cloned folder the same way as steps 3–4 above.
+   ```sh
+   git clone https://github.com/rlfordon/the-missing-link.git
+   ```
+
+2. In Firefox, open `about:debugging#/runtime/this-firefox`.
+3. Click **Load Temporary Add-on…** and select `manifest.json` from the unzipped or cloned folder.
+
+Temporary add-ons stay loaded until Firefox restarts. Re-load it from `about:debugging` after each restart.
 
 ## Setup
 

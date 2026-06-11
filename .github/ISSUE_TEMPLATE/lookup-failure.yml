@@ -1,0 +1,100 @@
+name: Lookup failure report
+description: Report a wrong or missing CourtListener match.
+title: "Lookup failure: "
+labels: ["lookup-failure"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve The Missing Link. The most useful reports are confidently wrong results, focus-mode misses, and cases where CourtListener had the right record but the extension did not find it.
+
+  - type: input
+    id: article_url
+    attributes:
+      label: Article or page URL
+      description: The page you ran The Missing Link on.
+      placeholder: "https://www.example.com/news/article"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Lookup mode
+      options:
+        - Whole page
+        - Focus mode with selected text
+        - Right-click selection / PDF selection
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: selected_text
+    attributes:
+      label: Selected text, if any
+      description: If you used focus mode or the right-click selection menu, paste the selected passage here.
+      render: text
+    validations:
+      required: false
+
+  - type: input
+    id: reported_result
+    attributes:
+      label: Result The Missing Link returned
+      description: Paste the CourtListener URL or case name shown by the extension.
+      placeholder: "https://www.courtlistener.com/opinion/... or Case v. Name"
+    validations:
+      required: true
+
+  - type: input
+    id: expected_result
+    attributes:
+      label: Expected result
+      description: Paste the correct CourtListener URL or case name, if you found it.
+      placeholder: "https://www.courtlistener.com/docket/... or Correct Case v. Name"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: confidence
+    attributes:
+      label: Confidence shown in the popup
+      options:
+        - High
+        - Medium
+        - Low
+        - No confidence shown
+        - Not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: model
+    attributes:
+      label: Claude model selected
+      description: Shown in the extension settings.
+      options:
+        - Sonnet 4.6
+        - Haiku 4.5
+        - Opus 4.7
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: What happened?
+      description: A short explanation of why the result looked wrong or incomplete.
+      placeholder: "The article was about today's Fifth Circuit mifepristone case, but the extension returned an older Texas case."
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra_context
+    attributes:
+      label: Extra context
+      description: Screenshots, search terms that found the correct case, browser version, or anything else useful.
+    validations:
+      required: false
