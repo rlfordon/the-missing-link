@@ -5,6 +5,7 @@
   "description": "Find the case the article didn't link. Claude identifies the case discussed on the page; the extension links you straight to it on CourtListener.",
   "author": "Rebecca Fordon",
   "homepage_url": "https://github.com/rlfordon/the-missing-link",
+  "minimum_chrome_version": "121",
   "icons": {
     "48": "icons/icon-48.png",
     "96": "icons/icon-96.png",
