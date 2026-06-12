@@ -200,7 +200,7 @@ browser.contextMenus.onClicked.addListener(async (info, tab) => {
     },
   });
   try {
-    await browser.browserAction.openPopup();
+    await browser.action.openPopup();
   } catch (e) {
     // openPopup can fail in rare cases (e.g., focus stolen by another
     // window). The pendingSelection is still in storage — if the user
