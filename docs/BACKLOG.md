@@ -2,6 +2,13 @@
 
 Forward-looking improvements, ordered roughly by ROI. Not a roadmap — pick from this list when you have time.
 
+## Recently shipped / partly addressed
+
+- **CourtListener RECAP fallback.** The search cascade now tries both CourtListener indexes. Trial-court matters and docket-number hits search RECAP first; appellate matters search opinions first and fall back to RECAP.
+- **Date-aware search.** The appellate free-text pass applies a `filed_after` date floor when Claude extracts `date_decided` or `date_filed_year`; RECAP results are re-ranked toward the extracted year rather than hard-filtered.
+- **Malformed JSON failures.** Extraction now uses Anthropic tool use instead of prompt-engineered JSON.
+- **Lookup failure reporting.** GitHub now has a structured "Lookup failure report" issue form.
+
 ## 1. Prompt: handle consolidated-case naming explicitly
 
 **Problem:** The model can't predict that an article framing a case one way might be captioned differently on appeal. It outputs the case name the article uses, which sometimes doesn't match the appellate index.
@@ -12,31 +19,28 @@ Forward-looking improvements, ordered roughly by ROI. Not a roadmap — pick fro
 
 **Limit:** Won't always work — sometimes the appellate name is genuinely unknowable from the article. Raises the floor, doesn't eliminate misses.
 
-## 2. UI: court-aware "you might also want" alternates
+## 2. Breaking-news date handling
+
+**Problem:** Very recent legal news can describe a ruling before it appears in the opinions index, while older related cases may already have strong CourtListener search scores. Issue #2's mifepristone report is the motivating example: an older plausible Fifth Circuit opinion beat the fresh RECAP docket.
+
+**Current state:** We already use date hints, but conservatively. The appellate free-text pass uses a `filed_after` floor, and RECAP results are re-ranked toward `date_filed_year`; we do not hard-filter to "today/yesterday."
+
+**Possible fixes (not exclusive):**
+
+- Extract the article publication date as a first-class field, separate from `date_decided`, so search can distinguish "article published today" from "case filed/decided today."
+- Add a "fresh news" search pass for articles published in the last few days: RECAP free-text with `filed_after` around the article date, then opinions free-text with the same floor.
+- Avoid strict today/yesterday filtering as the only path. CourtListener ingestion can lag, article dates can be wrong or updated, and the relevant docket may predate the article.
+- Surface the search strategy in debug-ish UI or issue reports so failures include whether RECAP was tried and which date hints were available.
+
+**Scope:** Search planning in `search.js` plus one or two extraction fields in `background.js`. Tests should cover "fresh article date pushes RECAP earlier" without excluding older-but-correct results.
+
+## 3. UI: court-aware "you might also want" alternates
 
 **Problem:** When the cascade returns a RECAP docket but the article actually describes an appellate ruling, the user has no obvious way to discover that the appellate opinion exists.
 
 **Fix:** When the popup renders a RECAP result *and* the article mentioned an appellate court (5th Cir., 9th Cir., SCOTUS, state supreme court), surface a secondary link: "Recent opinions from [court]" pointing to a CourtListener opinions search filtered by that court + recent date range. Lets the user click through and find the appellate opinion the cascade missed.
 
 **Scope:** UI work in `popup.js`'s `renderResult`. Needs a new field or two from the extraction (we'd want the explicit court name from the article). Maybe ~30-50 lines.
-
-## 3. Tool-use refactor: eliminate malformed-JSON errors
-
-**Problem:** Models occasionally produce malformed JSON: unquoted enum values (`"confidence":high` instead of `"confidence":"high"`), truncated output, stray code fences. The current parser fails noisily on any of these. **Originally suspected to be Haiku-only, but confirmed to also occur on Opus** — this is not "switch to a smarter model and forget it"; it's a fundamental reliability issue with prompt-engineered JSON that affects every model tier.
-
-**Fix:** Switch from "ask for JSON in the system prompt" to Anthropic tool use. Define a tool `record_case_extraction` whose `input_schema` matches the current extraction shape. Call the API with `tools: [tool]` and `tool_choice: { type: "tool", name: "record_case_extraction" }`. Parse the `tool_use` block instead of `text` content. The API validates against the schema before returning, so:
-
-- Unquoted strings → impossible
-- Missing required fields → impossible
-- Extra fields → impossible
-- Code fences → impossible (tool calls are structured)
-- Truncation mid-string → still possible but the error is structured, not a parser explosion
-
-The system prompt shrinks because field descriptions migrate into the tool's schema.
-
-**Scope:** ~30-50 lines in `background.js`. No popup or content-script changes.
-
-**Why higher priority now:** Confirmed across all model tiers, not just Haiku. Test case: `Fivehouse v. U.S. Department of Defense`. The target docket entry exists and is available in RECAP (`/docket/71231282/129/`); we just can't get there because the extraction call fails.
 
 ## 4. Better RECAP document selection within a docket
 
@@ -53,7 +57,24 @@ The system prompt shrinks because field descriptions migrate into the tool's sch
 
 **Scope:** ~15-20 lines, all in `popup.js`. No prompt or cascade changes.
 
-## 5. Confidence calibration / result validation for thin articles
+## 5. Manual pasted-text lookup mode
+
+**Problem:** Some pages are unreadable to the content script: PDF viewer edge cases, iframe/shadow-DOM content, transcript pages, sites that render late, and pages where the user already has the relevant text somewhere else. Today the popup can only read the active page or a right-click selection; if that fails, the user has no way to paste text directly into The Missing Link.
+
+**Inspiration:** Google Scholar's extension popup has a search box that accepts pasted text/citations. A similar mode here could let users paste an excerpt, caption, docket snippet, or article paragraph and run the same Claude → CourtListener flow without relying on page extraction.
+
+**Fix:** Add a small "paste text" affordance in the popup. When opened, show a textarea and a "Find case" button. Send the pasted text through the existing `FIND_CASE` message with `text` set to the pasted content and `selection` empty (or with a mode flag so the popup can show "from pasted text").
+
+**UX notes:**
+
+- Make this available from error states like "Page is empty" and "Couldn't read the page."
+- Also expose it from the normal popup, because users may intentionally want to paste from another source.
+- Keep the textarea local-only until the user clicks "Find case"; privacy copy should stay consistent with the normal flow.
+- Consider a one-line placeholder: "Paste article text, a case description, or a citation."
+
+**Scope:** Popup-only first pass: `popup.html`, `popup.css`, and `popup.js`. No content-script changes required. Could later pair with context-menu improvements.
+
+## 6. Confidence calibration / result validation for thin articles
 
 **Problem:** When the article gives thin case-identifying info (no docket number, no formal caption, just narrative description), Haiku and Sonnet hallucinate case names *with high confidence* and the cascade finds whatever case matches the hallucinated name. The user sees a confident wrong answer — a worse failure than "no match" because there's no signal that the result is unreliable. Opus is markedly better at this; the gap is real model-capability difference.
 
@@ -71,7 +92,7 @@ The system prompt shrinks because field descriptions migrate into the tool's sch
 
 **Scope:** Validation is the most targeted fix — ~20 lines, splits between `background.js` (matching parties against article text) and `popup.js` (rendering the warning). Prompt edit is a few lines but harder to reason about.
 
-## 6. Strengthen focus-passage handling for description-without-naming
+## 7. Strengthen focus-passage handling for description-without-naming
 
 **Problem:** When the focus passage describes a case without literally naming it, the model ignores the focus and falls back to the page's main subject. Current prompt's "focus overrides page" rule isn't strong enough for "case described, not named" scenarios.
 
@@ -83,7 +104,7 @@ The system prompt shrinks because field descriptions migrate into the tool's sch
 
 **Scope:** Prompt edit, ~10-20 lines. Test against The Conversation article.
 
-## 7. Content extraction for video-led / iframe / JS-rendered pages
+## 8. Content extraction for video-led / iframe / JS-rendered pages
 
 **Problem:** `content.js`'s `pickRoot` + `extractText` returns <40 chars on pages where the article body is:
 - Inside an iframe (TreeWalker can't cross frame boundaries from a top-frame content script)
@@ -103,7 +124,7 @@ Popup shows "Page is empty — No readable text was found on this page" instead 
 
 **Scope:** ~20-30 lines in `content.js`. Can be done incrementally — start with the retry-after-delay fix since it's the cheapest and likely covers most JS-render cases.
 
-## 8. "Open in tab" affordance for the popup
+## 9. "Open in tab" affordance for the popup
 
 **Problem:** Browser popups auto-close on focus loss — a hard convention we can't override. The copy-link button (already shipped) handles "I want the URL"; this would handle "I want to keep the result visible while I work."
 
