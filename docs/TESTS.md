@@ -201,6 +201,22 @@ When you fix something or change the prompt, walk through this list and update t
 
 ---
 
+## Reuters — Trump v. BBC ($10B defamation, missed-deadline order)
+
+**URL:** https://www.reuters.com/legal/government/us-judge-orders-trump-lawyers-explain-missed-deadline-10-billion-bbc-defamation-2026-06-08/
+
+**Mode:** Whole page.
+
+**What it tests:** Article about a procedural order (judge orders Trump's lawyers to explain a missed deadline) in the $10 billion BBC defamation suit. Tests case identification when the article's party is an extremely high-frequency name ("Trump") that appears across hundreds of CourtListener dockets. The article identifies the matter clearly — BBC, $10 billion, defamation — yet the cascade landed on a completely unrelated docket where Trump is merely a party.
+
+**Expected:** https://www.courtlistener.com/docket/72040010/trump-v-british-broadcasting-corporation/ (the district-court defamation docket the article is about).
+
+**Last observed (2026-06-08, Opus):** ✗ WRONG — returned *Taylor v. Trump* (https://www.courtlistener.com/docket/71717101/1/taylor-v-trump/), an unrelated matter that merely shares "Trump" as a party (and with the role reversed — Trump is the defendant there, the plaintiff in the BBC suit). RECAP routing was correct (both are dockets); the failure is case-name *matching*, not index routing.
+
+**Failure pattern:** Distinct from the Tangier hallucination and the Shelby County focus-override cases. Here the article is *not* thin — it names BBC, the $10B figure, and the defamation posture — and the failure persists on Opus, the strongest model. That points away from extraction quality and toward the search/cascade: a high-frequency party name ("Trump") lets the `loose`/`free` strategies surface a prominent but wrong Trump docket. Worth confirming whether extraction produced the right `case_name`/`parties` (e.g. "Trump v. British Broadcasting Corporation") and the CourtListener query still returned the wrong docket, vs. extraction itself fixating on "Trump." If extraction is correct, candidates to investigate: requiring the distinctive party ("British Broadcasting Corporation" / "BBC") in the case-name match before falling back to free-text, and the BACKLOG #5 post-cascade validation (distinctive tokens from the article should appear in the chosen docket's caption).
+
+---
+
 ## Still-open categories worth filling in
 
 These are gaps the existing 11 test cases don't cover:
