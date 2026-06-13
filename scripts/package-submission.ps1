@@ -1,6 +1,8 @@
 param()
 
 $ErrorActionPreference = "Stop"
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 $root = Split-Path -Parent $PSScriptRoot
 $manifestPath = Join-Path $root "manifest.json"
@@ -121,7 +123,26 @@ function New-ZipFromSpec(
     Remove-Item -LiteralPath $zipPath -Force
   }
 
-  Compress-Archive -Path (Join-Path $stagePath "*") -DestinationPath $zipPath -CompressionLevel Optimal
+  $zip = [System.IO.Compression.ZipFile]::Open($zipPath, [System.IO.Compression.ZipArchiveMode]::Create)
+  try {
+    $stagePrefixLength = $stagePath.Length + 1
+    Get-ChildItem -LiteralPath $stagePath -Recurse -File | ForEach-Object {
+      $fullName = $_.FullName
+      $entryName = $fullName.Substring($stagePrefixLength).Replace('\', '/')
+      $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::Optimal)
+      $entryStream = $entry.Open()
+      $fileStream = [System.IO.File]::OpenRead($fullName)
+      try {
+        $fileStream.CopyTo($entryStream)
+      } finally {
+        $fileStream.Dispose()
+        $entryStream.Dispose()
+      }
+    }
+  } finally {
+    $zip.Dispose()
+  }
+
   return $zipPath
 }
 
