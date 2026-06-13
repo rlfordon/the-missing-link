@@ -84,6 +84,10 @@ Most useful things to flag:
 
 See [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) for architecture, configuration knobs, and source layout. Other dev notes (`docs/BACKLOG.md`, `docs/TESTS.md`, `docs/test-links.html`) live alongside it.
 
+## Thanks
+
+Thanks to Tony Rowles ([`@tonyrowles`](https://github.com/tonyrowles)) for the Chrome port and PR `#4`.
+
 ## License
 
 [MIT](LICENSE) © 2026 Rebecca Fordon. Personal-scale tool.

@@ -4,6 +4,7 @@
 
 - **Published to the Chrome Web Store.** Public listing: https://chromewebstore.google.com/detail/the-missing-link/keabioafoggdllieldimckfijklbdoii
 - **Chrome support via MV3.** The extension now runs in Chrome/Chromium with an MV3 manifest, `action`, host permissions, a service-worker loader, and the vendored `webextension-polyfill`.
+- Thanks to Tony Rowles (`@tonyrowles`) for the Chrome port and PR `#4`.
 - **Safer and smarter CourtListener matching.** Search now handles acronym-heavy captions better (for example `BBC`/`British Broadcasting Corporation`), simplifies certain government-plaintiff RECAP captions, runs compact fallback queries from the selected text/title, and rejects obviously implausible matches instead of confidently surfacing unrelated cases.
 - **Much better behavior on several real-world misses.** Reuters `Trump v. BBC`, EEOC/JAG, Tangier, and the Politico UFC follow-up all improved materially during manual testing; some still remain imperfect on exact document selection or thin/paywalled coverage.
 - **Chrome popup recovery.** If Chrome opens the popup on a page where the content script is missing, the popup now injects the content script on demand and retries instead of failing immediately with "Receiving end does not exist."
