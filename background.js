@@ -21,6 +21,18 @@ ROUTING RULE (most consequential field): document_type controls which CourtListe
   - "unknown" if you genuinely can't tell.
 
 If the page isn't about a specific case (a general news roundup, an opinion piece about the law in general, a marketing page), set is_case=false and leave the other fields null.
+Also set is_case=false when the page is about policy, nominations, public health, or politics and only mentions litigation incidentally. Do not invent a case just because a public figure or surname on the page happens to appear in CourtListener.
+
+NAME DISCIPLINE:
+  - Use party names exactly as they appear on the page or as clearly-supported long-form expansions from the surrounding context.
+  - Do NOT invent missing surnames, middle names, or extra parties.
+  - If the page only gives a partial caption or only one side's names, that's fine: use the partial caption or null rather than hallucinating a fuller one.
+
+PUBLIC-LAW / GOVERNMENT-ACTION CASES:
+  - When plaintiffs challenge a government approval, permit, authorization, policy, or event, do not assume the defendant from the headline alone.
+  - Prefer the parties explicitly named in the page text. Only infer an agency-style defendant when the page context clearly indicates the suit is against the agency or official that authorized the action.
+  - Do not replace an explicitly named private defendant with a government entity, or vice versa, unless the article clearly supports that swap.
+  - Use the full page context to identify the actual defendant when the focus passage only lists plaintiffs or describes the challenged action.
 
 FOCUS PASSAGE: If the user message contains a "FOCUS PASSAGE" section in addition to "PAGE TEXT", the user has highlighted the specific passage they want resolved. The page may discuss multiple cases or orders; identify the ONE case the focus passage is about, not the page's most prominent case. Use the rest of the page as context to fill in details the focus passage leaves out (docket number, court, exact caption), but the case you identify must be the one the focus is describing. If the focus passage describes a different case than the page's main subject, go with the focus.`;
 
@@ -38,7 +50,7 @@ const EXTRACT_TOOL = {
       confidence: { type: "string", enum: ["high", "medium", "low"] },
       case_name: {
         type: ["string", "null"],
-        description: "Short CourtListener-style caption: \"Loomer v. Maher\", NOT \"Loomer v. Maher and HBO\". Use the two lead parties. If only one side is named, that's fine (\"United States v. Smith\"). When a government sues a government (U.S. v. a state, state v. U.S., one state v. another), use the entity name, NOT an individual official — \"United States v. State of New Jersey\", not \"United States v. Sherrill\" even if Governor Sherrill is a named co-defendant. Your best guess is better than null.",
+        description: "Short CourtListener-style caption: \"Loomer v. Maher\", NOT \"Loomer v. Maher and HBO\". Use the two lead parties. If only one side is named, that's fine (\"United States v. Smith\"). Use names that appear on the page or are clearly supported by surrounding context; do not invent missing surnames or fuller names. When a government sues a government (U.S. v. a state, state v. U.S., one state v. another), use the entity name, NOT an individual official — \"United States v. State of New Jersey\", not \"United States v. Sherrill\" even if Governor Sherrill is a named co-defendant. In suits challenging government authorization or policy, prefer the defendant actually supported by the page text; do not swap in a government entity or private beneficiary unless the article clearly points there. Your best supported guess is better than null.",
       },
       parties: {
         type: ["array", "null"],
@@ -143,23 +155,44 @@ async function fetchCLSearch(url) {
   }
 }
 
-async function searchCourtListener(info) {
+async function searchCourtListener(info, context = {}) {
   // Try the planned (type, strategy) URLs in order until one returns results.
   // The ordering/dedup logic lives in buildSearchPlan (pure, unit-tested);
   // this function is just the I/O loop. `tried` counts URLs actually fetched,
   // matching the old triedURLs.length the popup renders ("across N tries").
   const plan = buildSearchPlan(info);
+  const sourceFallbacks = [];
+  const prefersRecap =
+    info.document_type === "docket" ||
+    info.document_type === "order" ||
+    info.document_type === "complaint" ||
+    Boolean(info.docket_number);
+  const typeOrder = prefersRecap ? ["r", "o"] : ["o", "r"];
+  for (const type of typeOrder) {
+    const url = buildSourceSearchURL(context, type);
+    if (url) sourceFallbacks.push({ type, strategy: "source_freetext", url });
+  }
   let tried = 0;
-  for (const { type, strategy, url } of plan) {
+  let bestRejected = null;
+  const attempts = [...plan, ...sourceFallbacks];
+  const seen = new Set();
+  for (const { type, strategy, url } of attempts) {
+    if (!url || seen.has(url)) continue;
+    seen.add(url);
     tried++;
     const data = await fetchCLSearch(url);
     if (data && data.results && data.results.length > 0) {
-      // Re-rank RECAP by year proximity (skip for opinions — old opinions are
-      // routinely discussed in articles long after they come down).
-      const ranked =
-        type === "r" ? rerankByDate(data.results, info.date_filed_year) : data.results;
-      return { type, strategy, results: ranked.slice(0, 5), query_url: url, tried };
+      const ranked = rankSearchResults(data.results, info, context);
+      if (isPlausibleMatch(ranked[0], info, context)) {
+        return { type, strategy, results: ranked.slice(0, 5), query_url: url, tried };
+      }
+      if (!bestRejected) {
+        bestRejected = { type, strategy, results: ranked.slice(0, 5), query_url: url, tried };
+      }
     }
+  }
+  if (bestRejected) {
+    return { ...bestRejected, results: [] };
   }
   return { type: null, strategy: null, results: [], query_url: null, tried };
 }
@@ -232,7 +265,10 @@ browser.runtime.onMessage.addListener(async (msg) => {
       if (!info.is_case) {
         return { ok: true, info, search: null, note: "no_case_detected" };
       }
-      const search = await searchCourtListener(info);
+      const search = await searchCourtListener(info, {
+        selection: msg.selection || "",
+        title: msg.title || "",
+      });
       return { ok: true, info, search };
     } catch (e) {
       return { ok: false, error: String(e.message || e) };

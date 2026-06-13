@@ -2,36 +2,52 @@
 
 ## How it works
 
-1. Content script extracts the visible article text (and your selection, if any).
-2. Background script sends the text to Claude with a prompt asking for structured JSON: `case_name`, `court_id`, `docket_number`, `document_type`, etc.
-3. With those identifiers, the extension runs a cascade of queries against CourtListener's public search API — RECAP first if Claude flagged a trial-court matter, opinions first otherwise — and falls back through looser variants if the strict query returns nothing.
-4. The popup renders the top match with a direct link, plus up to three alternates and a "search manually" fallback.
+1. A content script extracts the visible article text and the user's selection, if any.
+2. The background worker sends that text to Claude with a forced tool-use schema for `case_name`, `court_id`, `docket_number`, `document_type`, and related fields.
+3. With those identifiers, the extension runs a CourtListener search cascade. It chooses RECAP first for trial-court matters and opinions first for appellate/supreme-court matters, then falls back through stricter and looser query variants.
+4. The popup renders the top match, up to three alternates, and manual-search fallback links.
 
 ## Files
 
 | File | Role |
 | --- | --- |
-| `manifest.json` | MV2 manifest. Host permissions for `api.anthropic.com` and `www.courtlistener.com`. |
-| `background.js` | Calls Claude for case extraction, then runs the search cascade against CourtListener. |
+| `manifest.json` | MV3 manifest used for both Firefox and Chrome/Chromium. |
+| `sw.js` | Tiny MV3 service-worker loader for Chrome. |
+| `background.js` | Calls Claude for case extraction, then runs the CourtListener search flow. |
+| `search.js` | Pure query-construction, ranking, and plausibility helpers; unit-tested under Node. |
 | `content.js` | Extracts visible page text and the user's selection. |
-| `popup.html` / `popup.css` / `popup.js` | The popup UI. |
-| `options.html` / `options.js` | Stores the Anthropic API key in `browser.storage.local`. |
-| `icons/` | PNG icons (48 / 96 / 128) plus `generate.py` to regenerate them. |
+| `popup.html` / `popup.css` / `popup.js` | The popup UI and popup-side control flow. |
+| `options.html` / `options.js` | Stores the Anthropic API key and model choice in `browser.storage.local`. |
+| `browser-polyfill.min.js` | Vendored `webextension-polyfill` used across contexts. |
+| `icons/` | PNG icons plus `generate.py` to regenerate them. |
 
 ## Configuration
 
-A few things worth knowing if you want to tweak:
-
-- **Model.** Users pick Haiku 4.5 / Sonnet 4.6 / Opus 4.7 in the options page; the choice is stored in `browser.storage.local` under key `model` and read by `background.js` on each request. To change the *default* (what new users get before they touch settings), edit `DEFAULT_MODEL` in `background.js`.
-- **Text caps.** `MAX = 20000` chars for the page, `SEL_MAX = 4000` for the selection, both in `content.js`. Raise for very long articles.
-- **Search strategy.** The cascade in `background.js` (`searchCourtListener`) tries RECAP-first or opinions-first based on Claude's `document_type` hint, then falls back through `strict → loose → free` query variants. The `strict` variant uses the `court` filter; `loose` drops it (in case the model guessed the court ID wrong); `free` falls back to free-text `q=`.
-- **Prompt.** `EXTRACT_SYSTEM` in `background.js`. The most consequential lines are the rules for `document_type` (which routes search between CL's two indexes) and the focus-passage instructions (which tell Claude to resolve a user-selected passage rather than the page's most prominent case).
+- **Model.** Users pick Haiku 4.5 / Sonnet 4.6 / Opus 4.7 in the options page; the choice is stored in `browser.storage.local` under key `model` and read by `background.js` on each request. The fallback default is `DEFAULT_MODEL` in `background.js`.
+- **Text caps.** `MAX = 20000` chars for the page and `SEL_MAX = 4000` for the selection, both in `content.js`.
+- **Search strategy.** `search.js` and `background.js` coordinate a cascade of `strict`, `loose`, `case_name_free`, source-text free-text, and broader fallback queries across the RECAP and opinions indexes.
+- **Prompt.** `EXTRACT_SYSTEM` in `background.js` is the most consequential prompt. It controls `document_type` routing, focus-passage behavior, and the extraction guardrails around party naming.
 
 ## Reloading during development
 
-After editing source, click **Reload** on the extension card in `about:debugging#/runtime/this-firefox`. A full reload is needed for `background.js` and `manifest.json` changes; for `content.js` changes you may also need to reload the page you're testing on, since the old content script is still injected there.
+### Firefox
 
-Right-click the toolbar icon → **Inspect** to open devtools for the popup. The background script's console is reachable via the **Inspect** link in `about:debugging`.
+1. Open `about:debugging#/runtime/this-firefox`.
+2. Click **Load Temporary Add-on...** and select `manifest.json`.
+3. After edits, click **Reload** on the extension card. For `content.js` changes you may also need to reload the page itself.
+
+### Chrome
+
+1. Open `chrome://extensions`.
+2. Enable **Developer mode**.
+3. Click **Load unpacked** and select the repo folder, or use **Reload** after later edits.
+4. If you are testing a page that was already open before reload, refresh the page too.
+
+## Debugging
+
+- Right-click the toolbar icon and inspect the popup to debug `popup.js`.
+- In Firefox, the background console is reachable from `about:debugging`.
+- In Chrome, open the extension card in `chrome://extensions` and inspect the service worker.
 
 ## Regenerating the icon
 
@@ -41,12 +57,14 @@ Icons are produced by `icons/generate.py` (requires Pillow). Tweak the geometry 
 python icons/generate.py
 ```
 
-It writes `icon-48.png`, `icon-96.png`, and `icon-128.png` to the `icons/` directory.
+It writes the icon PNGs into `icons/`.
 
-## Porting to Chrome (MV3)
+## Notes
 
-Replace `browser.` with `chrome.` (or use a polyfill), convert `manifest.json` to MV3, move `background.js` to a service worker. The Anthropic and CourtListener `fetch` calls themselves don't change.
+- The Chrome popup now has an on-demand content-script injection retry path for pages where Chrome says `Receiving end does not exist`.
+- `search.js` is intentionally pure and exportable so `node --test tests/search.test.js` can exercise the query/ranking logic without a browser.
+- `docs/test-links.html` is a lightweight manual-test launcher for the article matrix in `docs/TESTS.md`.
 
 ## Editing in Claude Code
 
-If you're using Claude Code in this repo, see [`CLAUDE.md`](../CLAUDE.md) for architectural notes and gotchas — including the duplicate `buildCLSearchURL` definition in `background.js` that's easy to edit by mistake.
+If you're using Claude Code in this repo, see [`../CLAUDE.md`](../CLAUDE.md) for architectural notes and gotchas.

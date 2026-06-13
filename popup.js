@@ -43,6 +43,33 @@ function showError(title, body, showSetup = false) {
   }
 }
 
+async function injectContentScript(tabId) {
+  if (!browser.scripting?.executeScript) return false;
+  try {
+    await browser.scripting.executeScript({
+      target: { tabId },
+      files: ["browser-polyfill.min.js", "content.js"],
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function grabPageFromTab(tabId) {
+  try {
+    return await browser.tabs.sendMessage(tabId, { type: "GRAB_PAGE" });
+  } catch (e) {
+    const message = String(e && (e.message || e));
+    if (!/Receiving end does not exist|Could not establish connection/i.test(message)) {
+      throw e;
+    }
+    const injected = await injectContentScript(tabId);
+    if (!injected) throw e;
+    return await browser.tabs.sendMessage(tabId, { type: "GRAB_PAGE" });
+  }
+}
+
 function renderResult(info, search) {
   $("status").classList.add("hidden");
   const box = $("result");
@@ -87,26 +114,34 @@ function renderResult(info, search) {
   if (top.dateFiled) metaBits.push(`filed ${esc(top.dateFiled)}`);
   if (top.dateTerminated) metaBits.push(`terminated ${esc(top.dateTerminated)}`);
   if (top.assignedTo) metaBits.push(`Judge ${esc(top.assignedTo)}`);
-  const metaHTML = metaBits.join(' <span class="dot">·</span> ');
+  let metaHTML = metaBits.join(' <span class="dot">·</span> ');
 
   // Primary URL: prefer the most recent available RECAP document if we
   // searched RECAP, otherwise the opinion/docket page.
   let primaryURL = null;
   let primaryLabel = "Open on CourtListener";
+  let primaryDoc = null;
   if (search.type === "r" && Array.isArray(top.recap_documents)) {
     // Find a document that's actually available.
     const avail = top.recap_documents
       .filter((d) => d.is_available)
       .sort((a, b) => (b.entry_date_filed || "").localeCompare(a.entry_date_filed || ""));
     if (avail.length > 0) {
-      primaryURL = CL_BASE + avail[0].absolute_url;
-      primaryLabel = `Open ${avail[0].short_description || "document"}`;
+      primaryDoc = avail[0];
+      primaryURL = CL_BASE + primaryDoc.absolute_url;
+      primaryLabel = `Open ${primaryDoc.short_description || "document"}`;
     }
   }
   if (!primaryURL && top.absolute_url) {
     primaryURL = CL_BASE + top.absolute_url;
   } else if (!primaryURL && top.docket_absolute_url) {
     primaryURL = CL_BASE + top.docket_absolute_url;
+  }
+
+  if (primaryDoc?.entry_date_filed) {
+    const docMetaBits = metaBits.filter((bit) => !bit.startsWith("filed "));
+    docMetaBits.push(`document filed ${esc(primaryDoc.entry_date_filed)}`);
+    metaHTML = docMetaBits.join(' <span class="dot">·</span> ');
   }
 
   const docketURL = top.docket_absolute_url
@@ -116,7 +151,7 @@ function renderResult(info, search) {
   const confidence = (info.confidence || "low").toLowerCase();
   const chip = `<span class="chip ${esc(confidence)}">${esc(confidence)} confidence</span>`;
 
-  const snippet = top.recap_documents?.[0]?.description || top.snippet || "";
+  const snippet = primaryDoc?.description || top.recap_documents?.[0]?.description || top.snippet || "";
   const snippetHTML = snippet
     ? `<p class="snippet">${esc(snippet.slice(0, 220))}${snippet.length > 220 ? "…" : ""}</p>`
     : "";
@@ -293,7 +328,7 @@ async function run() {
 
   let page;
   try {
-    page = await browser.tabs.sendMessage(tab.id, { type: "GRAB_PAGE" });
+    page = await grabPageFromTab(tab.id);
   } catch (e) {
     // Content script might not be injected on pages the extension loaded
     // before (or on restricted pages).

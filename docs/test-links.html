@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Missing Link Test Links</title>
+  <style>
+    :root {
+      --bg: #f5f1e8;
+      --paper: #fffdf8;
+      --ink: #1d1a17;
+      --muted: #6c6257;
+      --rule: #d9d1bd;
+      --accent: #a56b1f;
+      --accent-2: #1f5fa5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      background: linear-gradient(180deg, #f8f5ed 0%, var(--bg) 100%);
+      color: var(--ink);
+    }
+    main {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 32px 20px 56px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 38px;
+      line-height: 1.05;
+    }
+    .intro {
+      margin: 0 0 28px;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.5;
+    }
+    .meta {
+      margin: 0 0 28px;
+      padding: 14px 16px;
+      border: 1px solid var(--rule);
+      border-radius: 14px;
+      background: rgba(255, 253, 248, 0.75);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+    .card {
+      background: var(--paper);
+      border: 1px solid var(--rule);
+      border-radius: 16px;
+      padding: 18px 18px 16px;
+      box-shadow: 0 8px 24px rgba(40, 30, 20, 0.05);
+    }
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      line-height: 1.15;
+    }
+    .mode {
+      display: inline-block;
+      margin: 0 0 10px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #efe7d5;
+      color: #5c4a29;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .desc {
+      margin: 0 0 10px;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 15px;
+    }
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 0 0 10px;
+    }
+    a.button {
+      display: inline-block;
+      text-decoration: none;
+      padding: 9px 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      border: 1px solid transparent;
+    }
+    a.primary {
+      background: var(--ink);
+      color: #fffdf8;
+    }
+    a.secondary {
+      background: #f2ecdf;
+      color: var(--accent-2);
+      border-color: var(--rule);
+    }
+    .focus {
+      margin-top: 10px;
+      padding: 12px;
+      border-left: 3px solid var(--accent);
+      background: #fcf8ef;
+      font-size: 14px;
+      line-height: 1.45;
+      color: #4c4338;
+      white-space: normal;
+    }
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>The Missing Link Test Links</h1>
+    <p class="intro">Quick click-through page for the manual regression set in <code>docs/TESTS.md</code>. Open an article, optionally select the focus passage, then run the extension and compare against the expected CourtListener target.</p>
+    <div class="meta">
+      Reload the extension first. For focus-mode cases, select the quoted passage before clicking the toolbar button. This page is just a convenience launcher; the source of truth is still <code>docs/TESTS.md</code>.
+    </div>
+
+    <section class="grid">
+      <article class="card">
+        <h2>ACLU Texas - Fifth Circuit en banc on SB4</h2>
+        <div class="mode">Focus selection</div>
+        <p class="desc">Consolidated-case naming on appeal. Article frames the case under a different caption than CourtListener uses.</p>
+        <div class="links">
+          <a class="button primary" href="https://www.aclutx.org/press-releases/fifth-circuit-rules-challenge-to-extreme-texas-immigration-law-must-be-dismissed-on-procedural-grounds/" target="_blank" rel="noopener">Open article</a>
+          <a class="button secondary" href="https://www.courtlistener.com/opinion/10847941/united-states-v-state-of-texas/" target="_blank" rel="noopener">Expected result</a>
+        </div>
+        <div class="focus"><strong>Focus:</strong> "NEW ORLEANS - The Fifth Circuit Court of Appeals today reversed a panel ruling that had affirmed a lower court's injunction against Texas Senate Bill 4 (88-4)..."</div>
+      </article>
+
+      <article class="card">
+        <h2>Courthouse News - Fivehouse v. DoD</h2>
+        <div class="mode">Focus selection</div>
+        <p class="desc">District-court sanctions order. Useful for RECAP routing and document selection.</p>
+        <div class="links">
+          <a class="button primary" href="https://www.courthousenews.com/judge-rebukes-ex-doj-attorney-for-ai-generated-brief/" target="_blank" rel="noopener">Open article</a>
+          <a class="button secondary" href="https://www.courtlistener.com/docket/71231282/129/fivehouse-v-us-department-of-defense/" target="_blank" rel="noopener">Expected result</a>
+        </div>
+        <div class="focus"><strong>Focus:</strong> "A federal magistrate judge officially reprimanded a former federal prosecutor Tuesday for an error-filled brief he admitted to using generative artificial intelligence on."</div>
+      </article>
+
+      <article class="card">
+        <h2>Shore Daily News - Tangier Island federal lawsuit</h2>
+        <div class="mode">Whole page</div>
+        <p class="desc">Thin-information, recently filed district-court matter that smaller models often miss.</p>
+        <div class="links">
+          <a class="button primary" href="https://shoredailynews.com/headlines/tangier-island-officials-named-in-federal-lawsuit-filed-by-former-police-applicant/" target="_blank" rel="noopener">Open article</a>
+          <a class="button secondary" href="https://www.courtlistener.com/docket/72126973/hayes-v-town-of-tangier-virginia/" target="_blank" rel="noopener">Expected result</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Dean Blundell - Loomer v. Maher</h2>
+        <div class="mode">Whole page</div>
+        <p class="desc">Basic RECAP canary. If this fails, something fundamental broke.</p>
+        <div class="links">
+          <a class="button primary" href="https://deanblundell.substack.com/p/breaking-laura-loomer-loses-bill" target="_blank" rel="noopener">Open article</a>
+          <a class="button secondary" href="https://www.courtlistener.com/docket/69387382/loomer-v-maher/" target="_blank" rel="noopener">Expected result</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Washington Post - non-case article</h2>
+        <div class="mode">Whole page</div>
+        <p class="desc">Non-case control. Expected behavior is the empty-state no-case result.</p>
+        <div class="links">
+          <a class="button primary" href="https://www.washingtonpost.com/health/2026/04/30/surgeon-general-nominee-means-saphier/" target="_blank" rel="noopener">Open article</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>1027 Superhits - focus on Casey</h2>
+        <div class="mode">Focus selection</div>
+        <p class="desc">Multi-case article where the selected passage reverses the official party order.</p>
+        <div class="links">
+          <a class="button primary" href="https://1027superhits.com/2025/12/06/us-supreme-court-may-be-poised-to-ditch-more-of-its-precedents/" target="_blank" rel="noopener">Open article</a>
+          <a class="button secondary" href="https://www.courtlistener.com/opinion/112786/planned-parenthood-of-southeastern-pa-v-casey/" target="_blank" rel="noopener">Expected result</a>
+        </div>
+        <div class="focus"><strong>Focus:</strong> "In a 1992 abortion rights case called Casey v. Planned Parenthood, the Supreme Court listed five factors to be considered when deciding whether to overrule a prior decision, such as whether the precedent is easy to apply and whether people have structured their lives based on it."</div>
+      </article>
+
+      <article class="card">
+        <h2>Constitution Center blog - Ten Commandments / 5th Circuit</h2>
+        <div class="mode">Whole page</div>
+        <p class="desc">Multi-case article without focus mode. Still a good ambiguity stress test.</p>
+        <div class="links">
+          <a class="button primary" href="https://constitutioncenter.org/blog/supreme-court-showdown-over-ten-commandments-likely-after-federal-court-decision" target="_blank" rel="noopener">Open article</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>The Conversation - focus on Shelby County v. Holder</h2>
+        <div class="mode">Focus selection</div>
+        <p class="desc">Selected passage describes the case without naming it. Good focus-override test.</p>
+        <div class="links">
+          <a class="button primary" href="https://theconversation.com/supreme-court-ruling-the-latest-in-history-of-diminishing-minority-voting-rights-281815" target="_blank" rel="noopener">Open article</a>
+          <a class="button secondary" href="https://www.courtlistener.com/opinion/931614/shelby-county-v-holder/" target="_blank" rel="noopener">Expected result</a>
+        </div>
+        <div class="focus"><strong>Focus:</strong> "Back in 2013, the Supreme Court tossed out a key provision of the Voting Rights Act regarding federal oversight of elections."</div>
+      </article>
+
+      <article class="card">
+        <h2>Columbus Dispatch - Disciplinary Counsel v. Rudduck</h2>
+        <div class="mode">Whole page</div>
+        <p class="desc">State supreme court opinion with thin visible text due to paywall.</p>
+        <div class="links">
+          <a class="button primary" href="https://www.dispatch.com/story/news/politics/2026/04/14/ohio-supreme-court-says-rule-blocking-endorsements-is-unconstitutional/89603915007/" target="_blank" rel="noopener">Open article</a>
+          <a class="button secondary" href="https://www.courtlistener.com/opinion/10831814/disciplinary-counsel-v-rudduck/" target="_blank" rel="noopener">Expected result</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Guardian - Louisiana v. Callais</h2>
+        <div class="mode">Whole page</div>
+        <p class="desc">Clean SCOTUS control case for opinions-index routing.</p>
+        <div class="links">
+          <a class="button primary" href="https://www.theguardian.com/commentisfree/2026/apr/30/supreme-court-voting-rights-act-ruling" target="_blank" rel="noopener">Open article</a>
+          <a class="button secondary" href="https://www.courtlistener.com/opinion/10850261/louisiana-v-callais/" target="_blank" rel="noopener">Expected result</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>PBS NewsHour - Voting Rights Act decision</h2>
+        <div class="mode">Whole page</div>
+        <p class="desc">Known content-extraction failure on a video-first transcript page.</p>
+        <div class="links">
+          <a class="button primary" href="https://www.pbs.org/newshour/show/how-the-supreme-courts-decision-weakens-the-voting-rights-act-nationwide" target="_blank" rel="noopener">Open article</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Reuters - Trump v. BBC</h2>
+        <div class="mode">Whole page</div>
+        <p class="desc">High-frequency party-name collision. Strong search-ranking stress test.</p>
+        <div class="links">
+          <a class="button primary" href="https://www.reuters.com/legal/government/us-judge-orders-trump-lawyers-explain-missed-deadline-10-billion-bbc-defamation-2026-06-08/" target="_blank" rel="noopener">Open article</a>
+          <a class="button secondary" href="https://www.courtlistener.com/docket/72040010/trump-v-british-broadcasting-corporation/" target="_blank" rel="noopener">Expected result</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>EEOC - JAG Physical Therapy pregnancy discrimination suit</h2>
+        <div class="mode">Focus selection</div>
+        <p class="desc">High-signal focus case with exact docket number and district. Excellent RECAP canary.</p>
+        <div class="links">
+          <a class="button primary" href="https://www.eeoc.gov/newsroom/jag-physical-therapy-pay-125000-eeoc-pregnancy-discrimination-lawsuit" target="_blank" rel="noopener">Open article</a>
+          <a class="button secondary" href="https://www.courtlistener.com/docket/70671708/us-equal-employment-opportunity-commission-v-pt-administrative-services/" target="_blank" rel="noopener">Expected result</a>
+        </div>
+        <div class="focus"><strong>Focus:</strong> "The EEOC filed suit in U.S. District Court for the Eastern District of New York (EEOC v. PT Administrative Services LLC d/b/a JAG Physical Therapy, Case No. 1:25-cv-03615) after first attempting to reach a pre-litigation settlement through its conciliation process."</div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

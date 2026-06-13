@@ -217,6 +217,34 @@ When you fix something or change the prompt, walk through this list and update t
 
 ---
 
+## EEOC — JAG Physical Therapy pregnancy discrimination suit
+
+**URL:** https://www.eeoc.gov/newsroom/jag-physical-therapy-pay-125000-eeoc-pregnancy-discrimination-lawsuit
+
+**Mode:** Focus on `"The EEOC filed suit in U.S. District Court for the Eastern District of New York (EEOC v. PT Administrative Services LLC d/b/a JAG Physical Therapy, Case No. 1:25-cv-03615) after first attempting to reach a pre-litigation settlement through its conciliation process."`
+
+**What it tests:** A high-signal focus-selection case where the selected sentence contains the plaintiff, defendant, exact court, and exact docket number. This should be one of the easiest possible RECAP lookups. Instead, the extension returned a completely different `Administrative Services LLC` case in a different district. Tests whether extraction/search drops the distinctive tokens (`EEOC`, `PT`, `JAG Physical Therapy`, `E.D.N.Y.`, `1:25-cv-03615`) and overweights the generic corporate suffix.
+
+**Expected:** https://www.courtlistener.com/docket/70671708/us-equal-employment-opportunity-commission-v-pt-administrative-services/ (*U.S. Equal Employment Opportunity Commission v. PT Administrative Services LLC*, E.D.N.Y., 1:25-cv-03615).
+
+**Last observed (2026-06-12, focused selection):** ✗ WRONG — returned *Orechovesky v. BNY Administrative Services LLC* (S.D.N.Y., 1:25-cv-08517), a different `Administrative Services LLC` case with the wrong plaintiff, wrong defendant, wrong district, and wrong docket.
+**Last observed (2026-06-12, after RECAP caption simplification fix):** ✓ Correct — returned *U.S. Equal Employment Opportunity Commission v. PT Administrative Services LLC* (https://www.courtlistener.com/docket/70671708/us-equal-employment-opportunity-commission-v-pt-administrative-services/). The search-side fix that simplifies certain government-plaintiff RECAP captions to the defendant-side legal name appears to recover this case cleanly.
+
+**Failure pattern:** Distinct from the Reuters Trump/BBC failure. This is not a thin article and not a broad-name collision on a common party alone — the selected sentence contains the exact docket number and court. The likely weak point is either extraction normalizing away too much of the caption, or the search cascade/query construction not preserving enough distinctive tokens once it sees the generic `Administrative Services LLC` suffix. As noted in manual triage, CourtListener captions the plaintiff as the full `U.S. Equal Employment Opportunity Commission`, not `EEOC`, so acronym expansion may also matter here.
+
+---
+
+## Recent Retest Notes (2026-06-12)
+
+- **Tangier Island:** Improved again â€” now matched the correct case from the whole page.
+- **Washington Post surgeon-general article:** Still correctly returned **No case detected**.
+- **Reuters Trump/BBC:** Now correctly returned *Trump v. British Broadcasting Corporation* after the acronym-expansion + richer free-text fallback search changes.
+- **Columbus Dispatch / Rudduck:** Improved but not fully fixed â€” with a narrow selection from the article, *Disciplinary Counsel v. Rudduck* surfaced in the result list, but not as the top hit.
+- **Politico June 12 follow-up on UFC White House lawsuit:** Improved substantially. A slight regression remains in the top match on at least one path, but the correct litigation now surfaced in the result list even without a selection, and with a focused selection it returned the right case family (if not always the exact best document).
+- **Politico June 7 UFC White House story:** Correctly returned *Douglas v. National Park Service*.
+- **TribLive Primanti Bros. mural lawsuit:** Returned **No match on CourtListener**. Manual CourtListener searches for combinations of `Kanfoush`, `Primanti`, `mural`, `copyright`, `Visual Artists Rights Act`, and `Pittsburgh` did not surface an obvious corresponding docket, so this currently looks more like "not yet on CourtListener / not yet indexed" than an extension-specific failure.
+- **New manual checks outside the original matrix:** No other regressions were found across the prior test set. Additional misses on very recent Trump-related and Supreme Court-related items may reflect a mix of extraction difficulty and recency/ingestion lag rather than obvious regressions in the extension itself.
+
 ## Still-open categories worth filling in
 
 These are gaps the existing 11 test cases don't cover:
