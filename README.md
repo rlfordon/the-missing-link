@@ -4,11 +4,15 @@
 
 A browser extension that finds the case discussed on a web page and links you straight to it on [CourtListener](https://www.courtlistener.com). Click the toolbar button, Claude identifies the case, and the extension searches CourtListener for the match.
 
-> **Status:** Firefox Add-ons currently carries `v0.5.0` at [addons.mozilla.org](https://addons.mozilla.org/en-US/firefox/addon/the-missing-link/). The source tree is now ahead at `v0.6.0` with Chrome/MV3 support and additional search hardening.
+> **Status:** Chrome Web Store now carries `v0.6.0` at [chromewebstore.google.com](https://chromewebstore.google.com/detail/the-missing-link/keabioafoggdllieldimckfijklbdoii), updated June 13, 2026. Firefox Add-ons still carries `v0.5.0` at [addons.mozilla.org](https://addons.mozilla.org/en-US/firefox/addon/the-missing-link/).
 
 ## Install
 
-Install from Firefox Add-ons:
+Install from Chrome Web Store:
+
+<https://chromewebstore.google.com/detail/the-missing-link/keabioafoggdllieldimckfijklbdoii>
+
+Or from Firefox Add-ons:
 
 <https://addons.mozilla.org/en-US/firefox/addon/the-missing-link/>
 
@@ -62,7 +66,7 @@ Most useful things to flag:
 
 ## Limitations
 
-- **Chrome support is currently source-only.** Firefox has the public AMO listing; Chrome/Chromium currently requires loading the unpacked extension locally.
+- **Store versions are temporarily split.** Chrome Web Store is on `v0.6.0`; Firefox Add-ons is still on `v0.5.0`.
 - **Single case per click.** If a page discusses multiple cases and you do not select one, you get whichever case Claude weighted highest.
 - **Won't find what isn't on CourtListener.** State trial-court filings and very recent matters may not be in RECAP yet.
 - **Smaller models can hallucinate confidently** on articles where the case is not clearly named. If you suspect a wrong answer, switch to Opus in settings and re-run.
