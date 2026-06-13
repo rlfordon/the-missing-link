@@ -1,6 +1,6 @@
 # Firefox AMO update notes
 
-Use this for the AMO update from `v0.5.0` to `v0.6.0`.
+Use this for the AMO update from `v0.5.0` to the now-published `v0.6.0` release.
 
 ## Version summary
 
