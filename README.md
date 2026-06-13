@@ -35,7 +35,7 @@ To test in Chrome/Chromium:
 
 ## Setup
 
-1. Get an Anthropic API key at [console.anthropic.com](https://console.anthropic.com/settings/keys). A few dollars of credit lasts hundreds of clicks.
+1. Get an Anthropic API key at [console.anthropic.com](https://console.anthropic.com/settings/keys). For most users, a few dollars of credit should last quite a while; light use is usually cents, not dollars.
 2. Click the toolbar icon -> Settings -> paste your key. While you're there, pick a model:
 
    - **Sonnet 4.6** - balanced, default
@@ -67,7 +67,7 @@ Most useful things to flag:
 - **Won't find what isn't on CourtListener.** State trial-court filings and very recent matters may not be in RECAP yet.
 - **Smaller models can hallucinate confidently** on articles where the case is not clearly named. If you suspect a wrong answer, switch to Opus in settings and re-run.
 - **Some video-led pages** do not expose article text in a way the content script can read; the popup will show "Page is empty."
-- **Costs Anthropic API tokens.** A fraction of a cent to a few cents per click, depending on the model.
+- **Costs Anthropic API tokens.** Light use is usually cents, not dollars, but heavy use or repeated testing can add up quickly, especially on Opus.
 
 ## Privacy
 

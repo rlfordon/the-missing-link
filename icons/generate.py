@@ -6,7 +6,9 @@ Firefox toolbar theme colors.
 
 Renders at 4x supersample then downsamples for crisp small-size output.
 Small toolbar sizes use a tighter layout so the icon doesn't read as shrunken
-next to neighboring extension buttons.
+next to neighboring extension buttons. The 128px asset is treated specially
+for Chrome Web Store guidance: the artwork sits inside a transparent padded
+frame so the visual weight matches Google's template.
 """
 
 from PIL import Image, ImageDraw, ImageFilter
@@ -18,19 +20,29 @@ SHADOW = (0, 0, 0, 80)
 
 SCALE = 4  # supersample factor
 
-def draw_icon(size_px: int) -> Image.Image:
+def draw_icon(size_px: int, store_frame: bool = True) -> Image.Image:
+    if size_px == 128 and store_frame:
+        # Build the regular full-strength mark first, then place it inside a
+        # transparent 128x128 frame at Chrome's recommended store size.
+        base = draw_icon(128, store_frame=False)
+        framed = Image.new("RGBA", (128, 128), (0, 0, 0, 0))
+        art = base.resize((96, 96), Image.LANCZOS)
+        framed.alpha_composite(art, (16, 16))
+        return framed
+
     s = size_px * SCALE
     img = Image.new("RGBA", (s, s), (0, 0, 0, 0))
 
     compact = size_px <= 32
 
     card_pad = 0
-    card_radius = int((0.17 if compact else 0.19) * s)
+    card_size = s
+    card_radius = int((0.17 if compact else 0.19) * card_size)
     card_box = (card_pad, card_pad, s - card_pad, s - card_pad)
 
     shadow = Image.new("RGBA", (s, s), (0, 0, 0, 0))
     sd = ImageDraw.Draw(shadow)
-    shadow_offset = int((0.015 if compact else 0.02) * s)
+    shadow_offset = int((0.015 if compact else 0.02) * card_size)
     sd.rounded_rectangle(
         (
             card_box[0] + shadow_offset,
@@ -41,7 +53,7 @@ def draw_icon(size_px: int) -> Image.Image:
         radius=card_radius,
         fill=SHADOW,
     )
-    shadow = shadow.filter(ImageFilter.GaussianBlur(int(0.018 * s)))
+    shadow = shadow.filter(ImageFilter.GaussianBlur(int(0.018 * card_size)))
     img.alpha_composite(shadow)
 
     d = ImageDraw.Draw(img)
@@ -50,19 +62,19 @@ def draw_icon(size_px: int) -> Image.Image:
         radius=card_radius,
         fill=PAPER,
         outline=RULE,
-        width=max(1, int((0.012 if compact else 0.014) * s)),
+        width=max(1, int((0.012 if compact else 0.014) * card_size)),
     )
 
     # Bracket geometry (in normalized 0..1, then scaled). Small toolbar sizes
     # are drawn chunkier and closer to the card edges so the icon fills the
     # browser's 16px slot instead of reading like a tiny badge.
-    stroke = int((0.07 if compact else 0.062) * s)
-    serif_len = int((0.155 if compact else 0.145) * s)
-    serif_thick = int((0.07 if compact else 0.062) * s)
-    bracket_top = int((0.17 if compact else 0.19) * s)
-    bracket_bot = int((0.83 if compact else 0.81) * s)
-    left_x = int((0.12 if compact else 0.15) * s)
-    right_x = int((0.88 if compact else 0.85) * s) - stroke
+    stroke = int((0.07 if compact else 0.062) * card_size)
+    serif_len = int((0.155 if compact else 0.145) * card_size)
+    serif_thick = int((0.07 if compact else 0.062) * card_size)
+    bracket_top = card_pad + int((0.17 if compact else 0.19) * card_size)
+    bracket_bot = card_pad + int((0.83 if compact else 0.81) * card_size)
+    left_x = card_pad + int((0.12 if compact else 0.15) * card_size)
+    right_x = card_pad + int((0.88 if compact else 0.85) * card_size) - stroke
 
     # Left bracket
     d.rectangle((left_x, bracket_top, left_x + stroke, bracket_bot), fill=INK)
@@ -77,10 +89,10 @@ def draw_icon(size_px: int) -> Image.Image:
     # Ellipsis: three dots, centered between brackets at true vertical
     # center (no underline below to bias it lower). Larger dots so the
     # mark stays legible at toolbar size.
-    dot_y = int(0.50 * s)
+    dot_y = card_pad + int(0.50 * card_size)
     cx = s // 2
-    dot_r = int((0.068 if compact else 0.062) * s)
-    gap = int((0.15 if compact else 0.155) * s)
+    dot_r = int((0.068 if compact else 0.062) * card_size)
+    gap = int((0.15 if compact else 0.155) * card_size)
     for offset in (-gap, 0, gap):
         x = cx + offset
         d.ellipse((x - dot_r, dot_y - dot_r, x + dot_r, dot_y + dot_r), fill=INK)

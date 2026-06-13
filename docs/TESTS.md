@@ -244,6 +244,7 @@ When you fix something or change the prompt, walk through this list and update t
 - **Politico June 7 UFC White House story:** Correctly returned *Douglas v. National Park Service*.
 - **TribLive Primanti Bros. mural lawsuit:** Returned **No match on CourtListener**. Manual CourtListener searches for combinations of `Kanfoush`, `Primanti`, `mural`, `copyright`, `Visual Artists Rights Act`, and `Pittsburgh` did not surface an obvious corresponding docket, so this currently looks more like "not yet on CourtListener / not yet indexed" than an extension-specific failure.
 - **New manual checks outside the original matrix:** No other regressions were found across the prior test set. Additional misses on very recent Trump-related and Supreme Court-related items may reflect a mix of extraction difficulty and recency/ingestion lag rather than obvious regressions in the extension itself.
+- **Chrome Web Store submission follow-up:** the Chrome package dropped declarative manifest `content_scripts` in favor of `activeTab` plus on-demand injection to avoid broad page host permissions. Re-test toolbar-based focus mode on ordinary web articles after that change; pages that clear the selection when the popup opens are the most likely place to show a regression.
 
 ## Still-open categories worth filling in
 

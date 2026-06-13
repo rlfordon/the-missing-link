@@ -15,7 +15,7 @@
 | `sw.js` | Tiny MV3 service-worker loader for Chrome. |
 | `background.js` | Calls Claude for case extraction, then runs the CourtListener search flow. |
 | `search.js` | Pure query-construction, ranking, and plausibility helpers; unit-tested under Node. |
-| `content.js` | Extracts visible page text and the user's selection. |
+| `content.js` | Extracts visible page text and the user's selection. Injected on demand from the popup rather than declared globally in the manifest. |
 | `popup.html` / `popup.css` / `popup.js` | The popup UI and popup-side control flow. |
 | `options.html` / `options.js` | Stores the Anthropic API key and model choice in `browser.storage.local`. |
 | `browser-polyfill.min.js` | Vendored `webextension-polyfill` used across contexts. |
@@ -27,6 +27,7 @@
 - **Text caps.** `MAX = 20000` chars for the page and `SEL_MAX = 4000` for the selection, both in `content.js`.
 - **Search strategy.** `search.js` and `background.js` coordinate a cascade of `strict`, `loose`, `case_name_free`, source-text free-text, and broader fallback queries across the RECAP and opinions indexes.
 - **Prompt.** `EXTRACT_SYSTEM` in `background.js` is the most consequential prompt. It controls `document_type` routing, focus-passage behavior, and the extraction guardrails around party naming.
+- **Page access model.** The shared MV3 manifest now avoids broad page host permissions. Instead of declarative `content_scripts`, the extension relies on `activeTab` plus `scripting.executeScript()` to inject `content.js` on demand after a user click.
 
 ## Reloading during development
 
@@ -61,7 +62,8 @@ It writes the icon PNGs into `icons/`.
 
 ## Notes
 
-- The Chrome popup now has an on-demand content-script injection retry path for pages where Chrome says `Receiving end does not exist`.
+- The popup now has an on-demand content-script injection retry path for pages where Chrome or Firefox says `Receiving end does not exist`.
+- Because `content.js` is no longer always present ahead of time, toolbar-based focus-mode selection capture should be sanity-checked on both browsers after permission-model changes. The context-menu selection path remains the most reliable path for PDFs and selection-sensitive pages.
 - `search.js` is intentionally pure and exportable so `node --test tests/search.test.js` can exercise the query/ranking logic without a browser.
 - `docs/test-links.html` is a lightweight manual-test launcher for the article matrix in `docs/TESTS.md`.
 
